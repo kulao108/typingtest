@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>瑪利奧輔助字形打字系統</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f8ff; margin: 0; padding: 20px; color: #333; }
+    h1, h2 { text-align: center; color: #333; }
+    .panel { display: none; max-width: 950px; margin: 0 auto; background: white; padding: 30px; border-radius: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .btn { padding: 10px 20px; font-size: 18px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin: 5px; }
+    .btn:disabled { opacity: .55; cursor: not-allowed; }
+    .btn-student { background: #2196F3; color: white; }
+    .btn-start { background: #e52521; color: white; width: 100%; padding: 15px; font-size: 20px; margin-top: 20px; }
+    .login-box { text-align: center; max-width: 480px; margin: 50px auto; }
+    .login-box input, .login-box select { width: 84%; padding: 11px; margin: 8px 0; font-size: 18px; border: 1px solid #ccc; border-radius: 8px; text-align: center; }
+    #loading-screen { text-align: center; margin-top: 50px; font-size: 20px; color: #555; }
+    .status-note { font-size: 14px; margin-top: 10px; color: #666; line-height: 1.5; }
+    .student-card { background: #eef7ff; border: 2px solid #90caf9; border-radius: 12px; padding: 14px 18px; margin: 10px auto 18px; text-align: left; max-width: 390px; line-height: 1.8; }
+    .student-card strong { display: inline-block; min-width: 72px; }
+    .error-box { color: #c62828; margin-top: 10px; min-height: 22px; font-weight: 600; }
+
+    #game-container { width: 800px; height: 350px; margin: 0 auto; background-color: #87CEEB; position: relative; border: 4px solid #333; border-radius: 10px; overflow: hidden; box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+    #background { position: absolute; width: 200%; height: 100%; background-image: repeating-linear-gradient(90deg, transparent, transparent 100px, rgba(255,255,255,0.3) 100px, rgba(255,255,255,0.3) 200px); bottom: 0; left: 0; z-index: 1; }
+    #ground { position: absolute; bottom: 0; width: 100%; height: 60px; background-color: #8B4513; border-top: 6px solid #228B22; z-index: 3; }
+    #player { font-size: 60px; position: absolute; bottom: 50px; left: 50px; z-index: 4; transition: bottom 0.15s ease-out, left 0.3s ease-out; }
+    #question-box { position: absolute; top: 10%; left: 50%; transform: translateX(-50%); z-index: 5; background: rgba(255, 255, 255, 0.96); padding: 15px 30px; border-radius: 10px; border: 4px solid #333; text-align: center; transition: border-color 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+    .question-image img { max-width: 120px; max-height: 120px; border-radius: 5px; }
+    #hud { display: flex; justify-content: space-between; gap: 8px; padding: 10px 20px; font-size: 18px; font-weight: bold; background: #333; color: white; border-radius: 5px; width: 760px; margin: 0 auto 15px auto; }
+    .game-title { margin-top: 0; line-height: 1.5; }
+    #gas-bridge { display: none; width: 0; height: 0; border: 0; }
+
+    @media (max-width: 860px) {
+      body { padding: 8px; }
+      .panel { padding: 16px; }
+      #game-container { width: 100%; max-width: 800px; }
+      #hud { width: 100%; max-width: 760px; flex-wrap: wrap; font-size: 15px; }
+      .game-title { font-size: 18px; }
+    }
+  </style>
+</head>
+<body>
+  <iframe id="gas-bridge" title="Google Apps Script bridge"></iframe>
+
+  <div id="loading-screen" class="panel" style="display:block;">
+    <h2 id="loading-text">🔄 正在連接學生資料系統，請稍候...</h2>
+    <div id="loading-detail" class="status-note"></div>
+  </div>
+
+  <div id="student-login-panel" class="panel login-box">
+    <h2>🍄 輔助字形學習系統</h2>
+    <p style="color:green;font-weight:bold;">✅ 系統就緒，請登入</p>
+    <input type="text" id="login-acc" placeholder="請輸入帳號" autocomplete="username">
+    <input type="password" id="login-pw" placeholder="請輸入密碼" autocomplete="current-password">
+    <button id="login-button" class="btn btn-student" onclick="loginStudent()" style="width:84%;">登入系統</button>
+    <div id="login-error" class="error-box"></div>
+  </div>
+
+  <div id="student-setup-panel" class="panel login-box">
+    <h2>📚 測驗設定</h2>
+    <div class="student-card">
+      <div><strong>學生姓名：</strong><span id="setup-student-name"></span></div>
+      <div><strong>班別：</strong><span id="setup-student-class"></span></div>
+      <div id="setup-student-no-row"><strong>學號：</strong><span id="setup-student-no"></span></div>
+    </div>
+
+    <div style="margin:15px 0;">
+      <span style="font-size:18px;font-weight:bold;">📌 選擇類別：</span><br>
+      <select id="category-select">
+        <option value="cat1">哲理類</option>
+        <option value="cat2">筆劃類</option>
+        <option value="cat3">人身類</option>
+        <option value="cat4">字形類</option>
+        <option value="all">🌟 所有輔助字形（綜合）</option>
+      </select>
+    </div>
+
+    <div style="margin:15px 0;">
+      <span style="font-size:18px;font-weight:bold;">⏳ 測驗限時：</span><br>
+      <input type="number" id="practice-minutes" value="5" min="1" max="60" style="width:100px;font-size:20px;"> 分鐘
+    </div>
+
+    <div style="background:#e8f5e9;padding:15px;border-radius:8px;margin-top:20px;color:#2e7d32;text-align:left;font-size:14px;">
+      <b>📝 測驗規則：</b><br>
+      1. 共 <b>100</b> 題，答錯不扣分，直接跳到下一題。<br>
+      2. 連擊越快，角色跑得越快。<br>
+      3. 測驗結束後，成績會自動傳送到老師的 Google Sheet。
+    </div>
+    <button class="btn btn-start" onclick="prepareGame()">▶️ 準備好，開始狂奔</button>
+  </div>
+
+  <div id="game-panel" class="panel" style="background:transparent;box-shadow:none;max-width:1000px;">
+    <h2 class="game-title">
+      🏃‍♂️ 玩家：<span id="current-player-name" style="color:#e52521;"></span>
+      ｜班別：<span id="current-player-class" style="color:#8e24aa;"></span>
+      ｜類別：<span id="current-cat-name" style="color:#2196F3;"></span>
+    </h2>
+    <div id="hud">
+      <div>倒數：<span id="time-display" style="color:#FFD700;">00:00</span></div>
+      <div>進度：<span id="distance-display">0 / 100</span></div>
+      <div>速度：<span id="speed-display" style="color:#00FFFF;">0</span> km/h</div>
+      <div>得分：<span id="score-display" style="color:#00FF00;">0</span> 分</div>
+    </div>
+
+    <div id="game-container">
+      <div id="background"></div>
+      <div id="ground"></div>
+      <div id="player">🏃‍♂️‍➡</div>
+      <div id="question-box">
+        <div class="question-image" id="current-image"></div>
+        <div style="font-size:16px;font-weight:bold;margin-top:5px;">請輸入英文字母</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ==============================================================
+    // 只需要把下面網址換成「新 Google 帳戶」部署後取得的 /exec 網址。
+    // 例如：https://script.google.com/macros/s/XXXXXXXXXXXX/exec
+    // ==============================================================
+    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxABr831OyT0zfVX46yYPU8wXtYMq8gUpY3nMbsY7IUVHi22JIWApSiQQFrSCJfba79/exec";
+    const APP_VERSION = "2.0.0";
+    const TOTAL_QUESTIONS = 100;
+
+    let questionBank = [];
+    let currentStudent = null;
+    let sessionToken = "";
+    let currentCategoryText = "";
+    let questionsAttempted = 0, correctAnswers = 0, mistakes = 0;
+    let totalSeconds = 0, timeLeft = 0, currentQuestionIndex = 0;
+    let timerInterval = null, isPlaying = false, currentSpeed = 0, bgOffset = 0;
+
+    let bridgeReady = false;
+    let bridgeOrigin = "";
+    let requestCounter = 0;
+    const pendingRequests = new Map();
+
+    window.addEventListener('load', initSystem);
+    window.addEventListener('message', handleBridgeMessage);
+
+    function initSystem() {
+      if (!GAS_WEB_APP_URL.startsWith('https://script.google.com/macros/s/') || !GAS_WEB_APP_URL.endsWith('/exec')) {
+        showSystemError('尚未設定 Apps Script 網址。', '請先部署新的 Apps Script Web App，再把 /exec 網址貼到 index.html 的 GAS_WEB_APP_URL。');
+        return;
+      }
+
+      const bridge = document.getElementById('gas-bridge');
+      bridge.src = GAS_WEB_APP_URL;
+
+      setTimeout(() => {
+        if (!bridgeReady) {
+          showSystemError('未能連接 Google Apps Script。', '請檢查 Web App 是否已部署、存取權限是否允許學生使用，以及 Code.gs 的 ALLOWED_ORIGIN 是否填寫正確。');
+        }
+      }, 15000);
+    }
+
+    function handleBridgeMessage(event) {
+      const bridge = document.getElementById('gas-bridge');
+      if (event.source !== bridge.contentWindow) return;
+      const msg = event.data || {};
+      if (msg.channel !== 'typing-game') return;
+
+      if (msg.type === 'bridge-ready') {
+        bridgeReady = true;
+        bridgeOrigin = event.origin;
+        showPanel('student-login-panel');
+        return;
+      }
+
+      if (!msg.requestId || !pendingRequests.has(msg.requestId)) return;
+      const pending = pendingRequests.get(msg.requestId);
+      pendingRequests.delete(msg.requestId);
+      clearTimeout(pending.timer);
+
+      if (msg.ok) pending.resolve(msg.result);
+      else pending.reject(new Error(msg.error || 'Apps Script 發生未知錯誤'));
+    }
+
+    function bridgeRequest(action, payload, timeoutMs = 15000) {
+      return new Promise((resolve, reject) => {
+        if (!bridgeReady || !bridgeOrigin) {
+          reject(new Error('學生資料系統尚未連接完成'));
+          return;
+        }
+
+        const requestId = `req-${Date.now()}-${++requestCounter}`;
+        const timer = setTimeout(() => {
+          pendingRequests.delete(requestId);
+          reject(new Error('伺服器回應逾時，請檢查網絡後再試'));
+        }, timeoutMs);
+
+        pendingRequests.set(requestId, { resolve, reject, timer });
+        document.getElementById('gas-bridge').contentWindow.postMessage({
+          channel: 'typing-game',
+          requestId,
+          action,
+          payload
+        }, bridgeOrigin);
+      });
+    }
+
+    function showSystemError(title, detail) {
+      showPanel('loading-screen');
+      const text = document.getElementById('loading-text');
+      text.textContent = `❌ ${title}`;
+      text.style.color = 'red';
+      document.getElementById('loading-detail').textContent = detail || '';
+    }
+
+    function showPanel(panelId) {
+      document.querySelectorAll('.panel').forEach(p => p.style.display = 'none');
+      document.getElementById(panelId).style.display = 'block';
+    }
+
+    async function loginStudent() {
+      const acc = document.getElementById('login-acc').value.trim();
+      const pw = document.getElementById('login-pw').value;
+      const errorBox = document.getElementById('login-error');
+      const button = document.getElementById('login-button');
+
+      if (!acc || !pw) {
+        errorBox.textContent = '請輸入帳號及密碼。';
+        return;
+      }
+
+      errorBox.textContent = '';
+      button.disabled = true;
+      button.textContent = '登入中...';
+
+      try {
+        const result = await bridgeRequest('login', { account: acc, password: pw });
+        if (!result || !result.success) {
+          errorBox.textContent = (result && result.message) ? result.message : '帳號或密碼錯誤。';
+          return;
+        }
+
+        currentStudent = result.student;
+        sessionToken = result.sessionToken;
+
+        document.getElementById('setup-student-name').textContent = currentStudent.name || currentStudent.account;
+        document.getElementById('setup-student-class').textContent = currentStudent.className || '未設定';
+        document.getElementById('setup-student-no').textContent = currentStudent.studentNo || '—';
+        document.getElementById('setup-student-no-row').style.display = currentStudent.studentNo ? 'block' : 'none';
+        document.getElementById('current-player-name').textContent = currentStudent.name || currentStudent.account;
+        document.getElementById('current-player-class').textContent = currentStudent.className || '未設定';
+
+        showPanel('student-setup-panel');
+      } catch (err) {
+        errorBox.textContent = '登入失敗：' + err.message;
+      } finally {
+        button.disabled = false;
+        button.textContent = '登入系統';
+      }
+    }
+
+    async function loadZipData(zipFileName) {
+      const zipRes = await fetch('./' + zipFileName, { cache: 'no-cache' });
+      if (!zipRes.ok) throw new Error(zipFileName + ' 找不到');
+
+      const zipBlob = await zipRes.blob();
+      const zipContent = await new JSZip().loadAsync(zipBlob);
+      const promises = [];
+
+      Object.keys(zipContent.files).forEach(filename => {
+        const zipEntry = zipContent.files[filename];
+        if (zipEntry.dir || !filename.match(/\.(jpg|jpeg|png|gif|bmp|webp)$/i) || filename.includes('__MACOSX')) return;
+
+        const shortName = filename.split('/').pop();
+        const nameWithoutExt = shortName.replace(/\.[^.]+$/, '');
+        const answerMatch = nameWithoutExt.match(/^[a-zA-Z]+/);
+        if (!answerMatch) return;
+
+        promises.push(zipEntry.async('base64').then(base64Data => {
+          const ext = (shortName.split('.').pop() || '').toLowerCase();
+          const mimeMap = {
+            jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png',
+            gif: 'image/gif', bmp: 'image/bmp', webp: 'image/webp'
+          };
+          questionBank.push({
+            answer: answerMatch[0].toLowerCase(),
+            imgSrc: `data:${mimeMap[ext] || 'image/png'};base64,${base64Data}`
+          });
+        }));
+      });
+
+      await Promise.all(promises);
+    }
+
+    async function prepareGame() {
+      if (!currentStudent || !sessionToken) {
+        alert('登入狀態已失效，請重新登入。');
+        location.reload();
+        return;
+      }
+
+      const catSelect = document.getElementById('category-select');
+      const catValue = catSelect.value;
+      currentCategoryText = catSelect.options[catSelect.selectedIndex].text;
+      document.getElementById('current-cat-name').textContent = currentCategoryText;
+
+      showPanel('loading-screen');
+      document.getElementById('loading-text').textContent = `🔄 正在載入「${currentCategoryText}」題庫，請稍候...`;
+      document.getElementById('loading-text').style.color = '#555';
+      document.getElementById('loading-detail').textContent = '';
+      questionBank = [];
+
+      try {
+        if (catValue === 'all') {
+          await Promise.all([
+            loadZipData('cat1.zip'), loadZipData('cat2.zip'),
+            loadZipData('cat3.zip'), loadZipData('cat4.zip')
+          ]);
+        } else {
+          await loadZipData(catValue + '.zip');
+        }
+
+        if (questionBank.length === 0) throw new Error('題庫內沒有可用圖片');
+        startGame();
+      } catch (err) {
+        alert('載入題庫發生錯誤：' + err.message + '\n請確認 GitHub 已上傳對應的 ZIP 檔案。');
+        showPanel('student-setup-panel');
+      }
+    }
+
+    function formatTime(seconds) {
+      const s = Math.max(0, Number(seconds) || 0);
+      const m = Math.floor(s / 60);
+      const sec = s % 60;
+      return String(m).padStart(2, '0') + ':' + String(sec).padStart(2, '0');
+    }
+
+    function startGame() {
+      const minutes = Math.min(60, Math.max(1, parseInt(document.getElementById('practice-minutes').value, 10) || 5));
+      totalSeconds = minutes * 60;
+      timeLeft = totalSeconds;
+
+      showPanel('game-panel');
+      const qBox = document.getElementById('question-box');
+      qBox.style.display = 'block';
+      qBox.style.width = '';
+      qBox.style.borderColor = '#333';
+
+      questionBank.sort(() => Math.random() - 0.5);
+      questionsAttempted = 0;
+      correctAnswers = 0;
+      mistakes = 0;
+      currentQuestionIndex = 0;
+      currentSpeed = 0;
+      bgOffset = 0;
+      isPlaying = true;
+      document.getElementById('player').style.left = '50px';
+
+      updateHUD();
+      showNextQuestion();
+      requestAnimationFrame(gameLoop);
+
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        updateHUD();
+        if (timeLeft <= 0) endGame(false);
+      }, 1000);
+    }
+
+    function showNextQuestion() {
+      currentQuestionIndex = Math.floor(Math.random() * questionBank.length);
+      document.getElementById('current-image').innerHTML = `<img src="${questionBank[currentQuestionIndex].imgSrc}" alt="題目圖片">`;
+    }
+
+    window.addEventListener('keydown', e => {
+      if (!isPlaying) return;
+
+      const userInput = e.key.toLowerCase();
+      // 只接受單一英文字母，避免 Shift、Tab、方向鍵等被誤計為答錯。
+      if (!/^[a-z]$/.test(userInput)) return;
+
+      const correctAnswer = questionBank[currentQuestionIndex].answer;
+      questionsAttempted++;
+
+      if (userInput === correctAnswer) {
+        correctAnswers++;
+        currentSpeed = Math.min(40, currentSpeed + 12);
+        document.getElementById('player').style.left = (50 + (correctAnswers / TOTAL_QUESTIONS) * 650) + 'px';
+        document.getElementById('player').style.bottom = '90px';
+        setTimeout(() => document.getElementById('player').style.bottom = '50px', 150);
+      } else {
+        mistakes++;
+        currentSpeed = Math.max(0, currentSpeed - 10);
+        document.getElementById('question-box').style.borderColor = 'red';
+        setTimeout(() => document.getElementById('question-box').style.borderColor = '#333', 200);
+      }
+
+      updateHUD();
+      if (questionsAttempted >= TOTAL_QUESTIONS) endGame(true);
+      else showNextQuestion();
+    });
+
+    function gameLoop() {
+      if (!isPlaying) return;
+      currentSpeed *= 0.95;
+      bgOffset -= currentSpeed;
+      if (bgOffset <= -800) bgOffset = 0;
+      document.getElementById('background').style.transform = `translateX(${bgOffset}px)`;
+      document.getElementById('speed-display').textContent = Math.floor(currentSpeed * 3);
+      requestAnimationFrame(gameLoop);
+    }
+
+    function updateHUD() {
+      document.getElementById('time-display').textContent = formatTime(timeLeft);
+      document.getElementById('distance-display').textContent = `${questionsAttempted} / ${TOTAL_QUESTIONS}`;
+      document.getElementById('score-display').textContent = correctAnswers;
+    }
+
+    async function endGame(isFinishedAll) {
+      if (!isPlaying) return;
+      isPlaying = false;
+      clearInterval(timerInterval);
+
+      const statusText = isFinishedAll ? '✅ 完成100題' : '⏳ 時間到';
+      const title = isFinishedAll
+        ? '<h2 style="color:#4CAF50;">🎉 完成測驗！</h2>'
+        : '<h2 style="color:#e52521;">⏳ 時間到！</h2>';
+
+      document.getElementById('question-box').innerHTML = `
+        ${title}
+        <div style="font-size:16px;margin-bottom:8px;">${currentStudent.name}（${currentStudent.className || '未設定班別'}）</div>
+        <div style="font-size:16px;margin-bottom:10px;">類別：<b>${currentCategoryText}</b></div>
+        <div style="font-size:18px;">答對：${correctAnswers} 題 ｜ 答錯：${mistakes} 題</div>
+        <div style="font-size:26px;font-weight:bold;margin:10px 0;">得分：${correctAnswers} 分</div>
+        <div id="upload-status" style="color:#FF9800;font-weight:bold;margin-top:10px;">⏳ 正在將成績傳送給老師...</div>
+        <button onclick="location.reload()" style="margin-top:15px;padding:10px 18px;">回首頁</button>
+      `;
+      document.getElementById('question-box').style.width = '440px';
+
+      const timeUsed = Math.max(0, totalSeconds - Math.max(0, timeLeft));
+
+      try {
+        const result = await bridgeRequest('saveResult', {
+          sessionToken,
+          result: {
+            category: currentCategoryText,
+            status: statusText,
+            correct: correctAnswers,
+            mistakes,
+            attempted: questionsAttempted,
+            timeLimitSeconds: totalSeconds,
+            timeUsedSeconds: timeUsed,
+            appVersion: APP_VERSION
+          }
+        }, 20000);
+
+        const status = document.getElementById('upload-status');
+        if (result && result.success) {
+          status.textContent = '✅ 成績已成功寫入老師的 Google Sheet！';
+          status.style.color = 'green';
+        } else {
+          throw new Error((result && result.message) || '伺服器未確認寫入成功');
+        }
+      } catch (err) {
+        const status = document.getElementById('upload-status');
+        status.textContent = '❌ 成績傳送失敗：' + err.message + '。請截圖交給老師。';
+        status.style.color = 'red';
+      }
+    }
+  </script>
+</body>
+</html>
