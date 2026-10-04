@@ -1,618 +1,383 @@
 <!DOCTYPE html>
-
 <html lang="zh-HK">
-
 <head>
-
   <meta charset="UTF-8">
-
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0">
-
-  <title>
-    瑪利奧輔助字形打字系統
-  </title>
-
-
-  <script
-    src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js">
-  </script>
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>瑪利奧輔助字形打字系統</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
   <style>
-
-    * {
-      box-sizing: border-box;
-    }
-
+    * { box-sizing: border-box; }
 
     body {
-
-      font-family:
-        'Segoe UI',
-        Tahoma,
-        Geneva,
-        Verdana,
-        sans-serif;
-
-      background-color:
-        #f0f8ff;
-
-      margin:
-        0;
-
-      padding:
-        20px;
-
-      color:
-        #333;
-
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: #f0f8ff;
+      margin: 0;
+      padding: 20px;
+      color: #333;
     }
 
-
-    h1,
-    h2 {
-
-      text-align:
-        center;
-
-      color:
-        #333;
-
+    h1, h2, h3 {
+      text-align: center;
     }
-
 
     .panel {
-
-      display:
-        none;
-
-      max-width:
-        950px;
-
-      margin:
-        0 auto;
-
-      background:
-        white;
-
-      padding:
-        30px;
-
-      border-radius:
-        14px;
-
-      box-shadow:
-        0 4px 12px
-        rgba(0,0,0,0.1);
-
+      display: none;
+      max-width: 950px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 30px;
+      border-radius: 14px;
+      box-shadow: 0 4px 12px rgba(0,0,0,.1);
     }
-
-
-    .btn {
-
-      padding:
-        10px 20px;
-
-      font-size:
-        18px;
-
-      border:
-        none;
-
-      border-radius:
-        8px;
-
-      cursor:
-        pointer;
-
-      font-weight:
-        bold;
-
-      margin:
-        5px;
-
-    }
-
-
-    .btn:disabled {
-
-      opacity:
-        0.55;
-
-      cursor:
-        not-allowed;
-
-    }
-
-
-    .btn-student {
-
-      background:
-        #2196F3;
-
-      color:
-        white;
-
-    }
-
-
-    .btn-start {
-
-      background:
-        #e52521;
-
-      color:
-        white;
-
-      width:
-        100%;
-
-      padding:
-        15px;
-
-      font-size:
-        20px;
-
-      margin-top:
-        20px;
-
-    }
-
 
     .login-box {
-
-      text-align:
-        center;
-
-      max-width:
-        480px;
-
-      margin:
-        50px auto;
-
+      text-align: center;
+      max-width: 480px;
+      margin: 50px auto;
     }
-
 
     .login-box input,
     .login-box select {
-
-      width:
-        84%;
-
-      padding:
-        11px;
-
-      margin:
-        8px 0;
-
-      font-size:
-        18px;
-
-      border:
-        1px solid #ccc;
-
-      border-radius:
-        8px;
-
-      text-align:
-        center;
-
+      width: 84%;
+      padding: 11px;
+      margin: 8px 0;
+      font-size: 18px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      text-align: center;
     }
 
+    .btn {
+      padding: 10px 20px;
+      font-size: 18px;
+      border: 0;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 700;
+      margin: 5px;
+    }
+
+    .btn:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+    }
+
+    .btn-student {
+      background: #2196f3;
+      color: #fff;
+    }
+
+    .btn-start {
+      background: #e52521;
+      color: #fff;
+      width: 100%;
+      padding: 15px;
+      font-size: 20px;
+      margin-top: 20px;
+    }
 
     #loading-screen {
-
-      text-align:
-        center;
-
-      margin-top:
-        50px;
-
-      font-size:
-        20px;
-
-      color:
-        #555;
-
+      text-align: center;
+      margin-top: 50px;
+      font-size: 20px;
+      color: #555;
     }
-
 
     .status-note {
-
-      font-size:
-        14px;
-
-      margin-top:
-        10px;
-
-      color:
-        #666;
-
-      line-height:
-        1.5;
-
+      font-size: 14px;
+      margin-top: 10px;
+      color: #666;
+      line-height: 1.5;
     }
-
-
-    .student-card {
-
-      background:
-        #eef7ff;
-
-      border:
-        2px solid #90caf9;
-
-      border-radius:
-        12px;
-
-      padding:
-        14px 18px;
-
-      margin:
-        10px auto 18px;
-
-      text-align:
-        left;
-
-      max-width:
-        390px;
-
-      line-height:
-        1.8;
-
-    }
-
-
-    .student-card strong {
-
-      display:
-        inline-block;
-
-      min-width:
-        72px;
-
-    }
-
 
     .error-box {
-
-      color:
-        #c62828;
-
-      margin-top:
-        10px;
-
-      min-height:
-        22px;
-
-      font-weight:
-        600;
-
+      color: #c62828;
+      margin-top: 10px;
+      min-height: 22px;
+      font-weight: 600;
     }
 
+    .student-card {
+      background: #eef7ff;
+      border: 2px solid #90caf9;
+      border-radius: 12px;
+      padding: 14px 18px;
+      margin: 10px auto 18px;
+      text-align: left;
+      max-width: 390px;
+      line-height: 1.8;
+    }
+
+    .student-card strong {
+      display: inline-block;
+      min-width: 72px;
+    }
 
     #gas-response-frame {
-
-      display:
-        none;
-
-      width:
-        0;
-
-      height:
-        0;
-
-      border:
-        0;
-
+      display: none;
+      width: 0;
+      height: 0;
+      border: 0;
     }
 
-
-    #game-container {
-
-      width:
-        800px;
-
-      height:
-        350px;
-
-      margin:
-        0 auto;
-
-      background-color:
-        #87CEEB;
-
-      position:
-        relative;
-
-      border:
-        4px solid #333;
-
-      border-radius:
-        10px;
-
-      overflow:
-        hidden;
-
-      box-shadow:
-        0 10px 20px
-        rgba(0,0,0,0.2);
-
-    }
-
-
-    #background {
-
-      position:
-        absolute;
-
-      width:
-        200%;
-
-      height:
-        100%;
-
-      background-image:
-        repeating-linear-gradient(
-          90deg,
-          transparent,
-          transparent 100px,
-          rgba(255,255,255,0.3) 100px,
-          rgba(255,255,255,0.3) 200px
-        );
-
-      bottom:
-        0;
-
-      left:
-        0;
-
-      z-index:
-        1;
-
-    }
-
-
-    #ground {
-
-      position:
-        absolute;
-
-      bottom:
-        0;
-
-      width:
-        100%;
-
-      height:
-        60px;
-
-      background-color:
-        #8B4513;
-
-      border-top:
-        6px solid #228B22;
-
-      z-index:
-        3;
-
-    }
-
-
-    #player {
-
-      font-size:
-        60px;
-
-      position:
-        absolute;
-
-      bottom:
-        50px;
-
-      left:
-        50px;
-
-      z-index:
-        4;
-
-      transition:
-        bottom 0.15s ease-out,
-        left 0.3s ease-out;
-
-    }
-
-
-    #question-box {
-
-      position:
-        absolute;
-
-      top:
-        10%;
-
-      left:
-        50%;
-
-      transform:
-        translateX(-50%);
-
-      z-index:
-        5;
-
-      background:
-        rgba(
-          255,
-          255,
-          255,
-          0.96
-        );
-
-      padding:
-        15px 30px;
-
-      border-radius:
-        10px;
-
-      border:
-        4px solid #333;
-
-      text-align:
-        center;
-
-      transition:
-        border-color 0.2s;
-
-      box-shadow:
-        0 4px 10px
-        rgba(0,0,0,0.2);
-
-    }
-
-
-    .question-image img {
-
-      max-width:
-        120px;
-
-      max-height:
-        120px;
-
-      border-radius:
-        5px;
-
-    }
-
-
-    #hud {
-
-      display:
-        flex;
-
-      justify-content:
-        space-between;
-
-      gap:
-        8px;
-
-      padding:
-        10px 20px;
-
-      font-size:
-        18px;
-
-      font-weight:
-        bold;
-
-      background:
-        #333;
-
-      color:
-        white;
-
-      border-radius:
-        5px;
-
-      width:
-        760px;
-
-      margin:
-        0 auto 15px auto;
-
-    }
-
+    /* =========================
+       遊戲
+       ========================= */
 
     .game-title {
-
-      margin-top:
-        0;
-
-      line-height:
-        1.5;
-
+      margin-top: 0;
+      line-height: 1.5;
     }
 
+    #hud {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 10px 20px;
+      font-size: 18px;
+      font-weight: 700;
+      background: #333;
+      color: #fff;
+      border-radius: 5px;
+      width: 760px;
+      margin: 0 auto 15px;
+    }
 
-    @media (
-      max-width:860px
-    ) {
+    #game-container {
+      width: 800px;
+      height: 350px;
+      margin: 0 auto;
+      background: #87ceeb;
+      position: relative;
+      border: 4px solid #333;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 10px 20px rgba(0,0,0,.2);
+    }
 
+    #background {
+      position: absolute;
+      width: 200%;
+      height: 100%;
+      background-image: repeating-linear-gradient(
+        90deg,
+        transparent,
+        transparent 100px,
+        rgba(255,255,255,.3) 100px,
+        rgba(255,255,255,.3) 200px
+      );
+      bottom: 0;
+      left: 0;
+      z-index: 1;
+    }
+
+    #ground {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      height: 60px;
+      background: #8b4513;
+      border-top: 6px solid #228b22;
+      z-index: 3;
+    }
+
+    #player {
+      font-size: 60px;
+      position: absolute;
+      bottom: 50px;
+      left: 50px;
+      z-index: 4;
+      transition: bottom .15s ease-out, left .3s ease-out;
+    }
+
+    #question-box {
+      position: absolute;
+      top: 10%;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 5;
+      background: rgba(255,255,255,.96);
+      padding: 15px 30px;
+      border-radius: 10px;
+      border: 4px solid #333;
+      text-align: center;
+      transition: border-color .2s;
+      box-shadow: 0 4px 10px rgba(0,0,0,.2);
+    }
+
+    .question-image img {
+      max-width: 120px;
+      max-height: 120px;
+      border-radius: 5px;
+    }
+
+    /* =========================
+       成績及錯題重溫
+       ========================= */
+
+    #result-panel {
+      max-width: 1000px;
+    }
+
+    .result-summary {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(120px, 1fr));
+      gap: 12px;
+      margin: 20px 0;
+    }
+
+    .summary-card {
+      background: #f7f9fc;
+      border: 1px solid #e0e6ed;
+      border-radius: 12px;
+      padding: 16px 10px;
+      text-align: center;
+    }
+
+    .summary-label {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 6px;
+    }
+
+    .summary-value {
+      font-size: 26px;
+      font-weight: 800;
+    }
+
+    .review-section {
+      margin-top: 24px;
+      padding-top: 18px;
+      border-top: 2px solid #eee;
+    }
+
+    .review-note {
+      text-align: center;
+      color: #666;
+      margin-top: -4px;
+      margin-bottom: 16px;
+    }
+
+    .wrong-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+      max-height: 520px;
+      overflow-y: auto;
+      padding: 4px;
+    }
+
+    .wrong-card {
+      border: 2px solid #ffcdd2;
+      background: #fffafa;
+      border-radius: 12px;
+      padding: 14px;
+      text-align: center;
+    }
+
+    .wrong-title {
+      color: #c62828;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+
+    .wrong-card img {
+      display: block;
+      max-width: 120px;
+      max-height: 120px;
+      object-fit: contain;
+      margin: 0 auto 10px;
+      background: #fff;
+      border-radius: 8px;
+    }
+
+    .answer-row {
+      margin: 5px 0;
+      font-size: 16px;
+    }
+
+    .answer-wrong {
+      color: #d32f2f;
+      font-size: 21px;
+      font-weight: 800;
+    }
+
+    .answer-correct {
+      color: #2e7d32;
+      font-size: 21px;
+      font-weight: 800;
+    }
+
+    .perfect-box {
+      background: #e8f5e9;
+      color: #2e7d32;
+      border-radius: 12px;
+      padding: 18px;
+      text-align: center;
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    #upload-status {
+      margin-top: 20px;
+      text-align: center;
+      font-weight: 800;
+      color: #ff9800;
+    }
+
+    .result-actions {
+      margin-top: 18px;
+      text-align: center;
+    }
+
+    /* =========================
+       手機
+       ========================= */
+
+    @media (max-width: 860px) {
       body {
-
-        padding:
-          8px;
-
+        padding: 8px;
       }
-
 
       .panel {
-
-        padding:
-          16px;
-
+        padding: 16px;
       }
-
 
       #game-container {
-
-        width:
-          100%;
-
-        max-width:
-          800px;
-
+        width: 100%;
+        max-width: 800px;
       }
-
 
       #hud {
-
-        width:
-          100%;
-
-        max-width:
-          760px;
-
-        flex-wrap:
-          wrap;
-
-        font-size:
-          15px;
-
+        width: 100%;
+        max-width: 760px;
+        flex-wrap: wrap;
+        font-size: 15px;
       }
-
 
       .game-title {
-
-        font-size:
-          18px;
-
+        font-size: 18px;
       }
 
+      .result-summary {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .wrong-grid {
+        grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+      }
     }
-
   </style>
-
 </head>
-
 
 <body>
 
-
-  <!--
-    Apps Script POST 回應
-    會載入到這個隱藏 iframe
-  -->
-
+  <!-- Apps Script POST 回應 -->
   <iframe
-
     id="gas-response-frame"
-
     name="gas-response-frame"
-
     title="Google Apps Script response">
-
   </iframe>
 
 
@@ -621,28 +386,17 @@
        ========================= -->
 
   <div
-
     id="loading-screen"
-
     class="panel"
-
     style="display:block;">
 
-
-    <h2
-      id="loading-text">
-
+    <h2 id="loading-text">
       🔄 正在連接學生資料系統，請稍候...
-
     </h2>
 
-
     <div
-
       id="loading-detail"
-
       class="status-note">
-
     </div>
 
   </div>
@@ -653,73 +407,44 @@
        ========================= -->
 
   <div
-
     id="student-login-panel"
-
     class="panel login-box">
 
-
     <h2>
-
       🍄 輔助字形學習系統
-
     </h2>
-
 
     <p
       style="
         color:green;
         font-weight:bold;
       ">
-
       ✅ 系統就緒，請登入
-
     </p>
 
-
     <input
-
       type="text"
-
       id="login-acc"
-
       placeholder="請輸入帳號"
-
       autocomplete="username">
 
-
     <input
-
       type="password"
-
       id="login-pw"
-
       placeholder="請輸入密碼"
-
       autocomplete="current-password">
 
-
     <button
-
       id="login-button"
-
       class="btn btn-student"
-
       onclick="loginStudent()"
-
       style="width:84%;">
-
       登入系統
-
     </button>
 
-
     <div
-
       id="login-error"
-
       class="error-box">
-
     </div>
 
   </div>
@@ -730,167 +455,94 @@
        ========================= -->
 
   <div
-
     id="student-setup-panel"
-
     class="panel login-box">
 
-
     <h2>
-
       📚 測驗設定
-
     </h2>
 
-
-    <div
-      class="student-card">
-
+    <div class="student-card">
 
       <div>
-
-        <strong>
-          學生姓名：
-        </strong>
-
-        <span
-          id="setup-student-name">
-        </span>
-
+        <strong>學生姓名：</strong>
+        <span id="setup-student-name"></span>
       </div>
-
 
       <div>
-
-        <strong>
-          班別：
-        </strong>
-
-        <span
-          id="setup-student-class">
-        </span>
-
+        <strong>班別：</strong>
+        <span id="setup-student-class"></span>
       </div>
 
-
-      <div
-        id="setup-student-no-row">
-
-        <strong>
-          學號：
-        </strong>
-
-        <span
-          id="setup-student-no">
-        </span>
-
+      <div id="setup-student-no-row">
+        <strong>學號：</strong>
+        <span id="setup-student-no"></span>
       </div>
 
     </div>
 
 
-    <div
-      style="margin:15px 0;">
-
+    <div style="margin:15px 0;">
 
       <span
         style="
           font-size:18px;
           font-weight:bold;
         ">
-
         📌 選擇類別：
-
       </span>
-
 
       <br>
 
+      <select id="category-select">
 
-      <select
-        id="category-select">
-
-
-        <option
-          value="cat1">
-
+        <option value="cat1">
           哲理類
-
         </option>
 
-
-        <option
-          value="cat2">
-
+        <option value="cat2">
           筆劃類
-
         </option>
 
-
-        <option
-          value="cat3">
-
+        <option value="cat3">
           人身類
-
         </option>
 
-
-        <option
-          value="cat4">
-
+        <option value="cat4">
           字形類
-
         </option>
 
-
-        <option
-          value="all">
-
+        <option value="all">
           🌟 所有輔助字形（綜合）
-
         </option>
-
 
       </select>
 
     </div>
 
 
-    <div
-      style="margin:15px 0;">
-
+    <div style="margin:15px 0;">
 
       <span
         style="
           font-size:18px;
           font-weight:bold;
         ">
-
         ⏳ 測驗限時：
-
       </span>
-
 
       <br>
 
-
       <input
-
         type="number"
-
         id="practice-minutes"
-
         value="5"
-
         min="1"
-
         max="60"
-
         style="
           width:100px;
           font-size:20px;
         ">
-
 
       分鐘
 
@@ -908,16 +560,13 @@
         font-size:14px;
       ">
 
-
       <b>
         📝 測驗規則：
       </b>
 
       <br>
 
-      1. 共
-      <b>100</b>
-      題，答錯不扣分，直接跳到下一題。
+      1. 共 <b>100</b> 題，答錯不扣分，直接跳到下一題。
 
       <br>
 
@@ -927,13 +576,15 @@
 
       3. 測驗結束後，成績會自動傳送到老師的 Google Sheet。
 
+      <br>
+
+      4. 測驗完成後會顯示本次答錯的題目、你的答案及正確答案。
+
     </div>
 
 
     <button
-
       class="btn btn-start"
-
       onclick="prepareGame()">
 
       ▶️ 準備好，開始狂奔
@@ -948,74 +599,49 @@
        ========================= -->
 
   <div
-
     id="game-panel"
-
     class="panel"
-
     style="
       background:transparent;
       box-shadow:none;
       max-width:1000px;
     ">
 
-
-    <h2
-      class="game-title">
-
+    <h2 class="game-title">
 
       🏃‍♂️ 玩家：
 
-
       <span
-
         id="current-player-name"
-
         style="color:#e52521;">
-
       </span>
-
 
       ｜班別：
 
-
       <span
-
         id="current-player-class"
-
         style="color:#8e24aa;">
-
       </span>
-
 
       ｜類別：
 
-
       <span
-
         id="current-cat-name"
-
-        style="color:#2196F3;">
-
+        style="color:#2196f3;">
       </span>
-
 
     </h2>
 
 
-    <div
-      id="hud">
-
+    <div id="hud">
 
       <div>
 
         倒數：
 
         <span
-
           id="time-display"
-
-          style="color:#FFD700;">
+          style="color:#ffd700;">
 
           00:00
 
@@ -1028,11 +654,8 @@
 
         進度：
 
-        <span
-          id="distance-display">
-
+        <span id="distance-display">
           0 / 100
-
         </span>
 
       </div>
@@ -1043,10 +666,8 @@
         速度：
 
         <span
-
           id="speed-display"
-
-          style="color:#00FFFF;">
+          style="color:#00ffff;">
 
           0
 
@@ -1062,10 +683,8 @@
         得分：
 
         <span
-
           id="score-display"
-
-          style="color:#00FF00;">
+          style="color:#00ff00;">
 
           0
 
@@ -1075,44 +694,25 @@
 
       </div>
 
-
     </div>
 
 
-    <div
-      id="game-container">
+    <div id="game-container">
 
+      <div id="background"></div>
 
-      <div
-        id="background">
-      </div>
+      <div id="ground"></div>
 
-
-      <div
-        id="ground">
-      </div>
-
-
-      <div
-        id="player">
-
+      <div id="player">
         🏃‍♂️‍➡
-
       </div>
 
-
-      <div
-        id="question-box">
-
+      <div id="question-box">
 
         <div
-
           class="question-image"
-
           id="current-image">
-
         </div>
-
 
         <div
           style="
@@ -1120,14 +720,143 @@
             font-weight:bold;
             margin-top:5px;
           ">
-
           請輸入英文字母
-
         </div>
-
 
       </div>
 
+    </div>
+
+  </div>
+
+
+  <!-- =========================
+       成績及錯題重溫
+       ========================= -->
+
+  <div
+    id="result-panel"
+    class="panel">
+
+    <h2 id="result-title">
+      🎉 完成測驗！
+    </h2>
+
+
+    <div
+      id="result-student"
+      style="
+        text-align:center;
+        font-size:16px;
+      ">
+    </div>
+
+
+    <div
+      id="result-category"
+      style="
+        text-align:center;
+        margin-top:5px;
+      ">
+    </div>
+
+
+    <div class="result-summary">
+
+      <div class="summary-card">
+
+        <div class="summary-label">
+          已作答
+        </div>
+
+        <div
+          class="summary-value"
+          id="result-attempted">
+          0
+        </div>
+
+      </div>
+
+
+      <div class="summary-card">
+
+        <div class="summary-label">
+          答對
+        </div>
+
+        <div
+          class="summary-value"
+          id="result-correct"
+          style="color:#2e7d32;">
+          0
+        </div>
+
+      </div>
+
+
+      <div class="summary-card">
+
+        <div class="summary-label">
+          答錯
+        </div>
+
+        <div
+          class="summary-value"
+          id="result-wrong"
+          style="color:#c62828;">
+          0
+        </div>
+
+      </div>
+
+
+      <div class="summary-card">
+
+        <div class="summary-label">
+          正確率
+        </div>
+
+        <div
+          class="summary-value"
+          id="result-accuracy">
+          0%
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <div class="review-section">
+
+      <h3>
+        📝 錯題重溫
+      </h3>
+
+      <div class="review-note">
+        以下只顯示本次測驗答錯的題目。
+      </div>
+
+      <div id="wrong-review">
+      </div>
+
+    </div>
+
+
+    <div id="upload-status">
+      ⏳ 正在將成績傳送給老師...
+    </div>
+
+
+    <div class="result-actions">
+
+      <button
+        class="btn btn-student"
+        onclick="location.reload()">
+
+        回首頁
+
+      </button>
 
     </div>
 
@@ -1136,18 +865,16 @@
 
   <script>
 
-
     // ==============================================================
-    // 目前正式 Apps Script /exec
+    // Apps Script 設定
     // ==============================================================
 
     const GAS_WEB_APP_URL =
-
       "https://script.google.com/macros/s/AKfycbxRGHiGaU1zOl043Y_rn63Se43m2Du38D-w-K_OmmNuk2ASLQIaiL1U-aJVtORH-vTs/exec";
 
 
     const APP_VERSION =
-      "3.0.0";
+      "3.1.0";
 
 
     const TOTAL_QUESTIONS =
@@ -1188,6 +915,11 @@
 
     let mistakes =
       0;
+
+
+    // 儲存本次測驗錯題
+    let wrongAnswers =
+      [];
 
 
     let totalSeconds =
@@ -1235,38 +967,30 @@
     // ==============================================================
 
     window.addEventListener(
-
-      'load',
-
+      "load",
       initSystem
-
     );
 
 
     window.addEventListener(
-
-      'message',
-
+      "message",
       handleAppsScriptMessage
-
     );
 
 
     document
-
       .getElementById(
-        'login-pw'
+        "login-pw"
       )
-
       .addEventListener(
 
-        'keydown',
+        "keydown",
 
         event => {
 
           if (
             event.key ===
-            'Enter'
+            "Enter"
           ) {
 
             loginStudent();
@@ -1279,35 +1003,32 @@
 
 
     // ==============================================================
-    // 初始化
+    // Apps Script POST 通訊
     // ==============================================================
 
     async function initSystem() {
 
-
       if (
 
         !GAS_WEB_APP_URL.startsWith(
-          'https://script.google.com/macros/s/'
+          "https://script.google.com/macros/s/"
         )
 
         ||
 
         !GAS_WEB_APP_URL.endsWith(
-          '/exec'
+          "/exec"
         )
 
       ) {
 
-
         showSystemError(
 
-          'Apps Script 網址設定錯誤。',
+          "Apps Script 網址設定錯誤。",
 
-          'GAS_WEB_APP_URL 必須是正式部署的 /exec 網址。'
+          "GAS_WEB_APP_URL 必須是正式部署的 /exec 網址。"
 
         );
-
 
         return;
 
@@ -1316,12 +1037,11 @@
 
       try {
 
-
         const result =
 
           await postToAppsScript(
 
-            'ping',
+            "ping",
 
             {},
 
@@ -1338,7 +1058,6 @@
 
         ) {
 
-
           throw new Error(
 
             result &&
@@ -1346,7 +1065,7 @@
 
               ? result.message
 
-              : '後端未回覆成功狀態'
+              : "後端未回覆成功狀態"
 
           );
 
@@ -1354,24 +1073,20 @@
 
 
         showPanel(
-
-          'student-login-panel'
-
+          "student-login-panel"
         );
-
 
       }
 
       catch (err) {
 
-
         showSystemError(
 
-          '未能連接 Google Apps Script。',
+          "未能連接 Google Apps Script。",
 
-          '原因：' +
+          "原因：" +
           err.message +
-          '。請確認 Apps Script 已更新部署為新版本，並設定「執行身分：我」、「誰可以存取：任何人」。'
+          "。請確認 Apps Script 已更新部署，並設定「執行身分：我」、「誰可以存取：任何人」。"
 
         );
 
@@ -1380,22 +1095,16 @@
     }
 
 
-    // ==============================================================
-    // POST 通訊
-    // ==============================================================
-
     function createClientNonce() {
-
 
       if (
 
         window.crypto &&
 
         typeof window.crypto.randomUUID ===
-        'function'
+        "function"
 
       ) {
-
 
         return window.crypto.randomUUID();
 
@@ -1409,7 +1118,7 @@
 
         +
 
-        '-'
+        "-"
 
         +
 
@@ -1419,7 +1128,7 @@
 
         +
 
-        '-'
+        "-"
 
         +
 
@@ -1436,10 +1145,9 @@
       origin
     ) {
 
-
       if (
         origin ===
-        'null'
+        "null"
       ) {
 
         return true;
@@ -1448,7 +1156,6 @@
 
 
       try {
-
 
         const host =
 
@@ -1460,21 +1167,20 @@
         return (
 
           host ===
-          'script.google.com'
+          "script.google.com"
 
           ||
 
           host ===
-          'script.googleusercontent.com'
+          "script.googleusercontent.com"
 
           ||
 
           host.endsWith(
-            '.googleusercontent.com'
+            ".googleusercontent.com"
           )
 
         );
-
 
       }
 
@@ -1491,7 +1197,6 @@
       event
     ) {
 
-
       const msg =
         event.data ||
         {};
@@ -1500,7 +1205,7 @@
       if (
 
         msg.channel !==
-        'typing-game-post'
+        "typing-game-post"
 
       ) {
 
@@ -1570,16 +1275,13 @@
         msg.ok
       ) {
 
-
         pending.resolve(
           msg.result
         );
 
-
       }
 
       else {
-
 
         pending.reject(
 
@@ -1587,7 +1289,7 @@
 
             msg.error ||
 
-            'Apps Script 發生未知錯誤'
+            "Apps Script 發生未知錯誤"
 
           )
 
@@ -1609,7 +1311,6 @@
 
     ) {
 
-
       return new Promise(
 
         (
@@ -1617,10 +1318,9 @@
           reject
         ) => {
 
-
           const requestId =
 
-            'req-'
+            "req-"
 
             +
 
@@ -1628,7 +1328,7 @@
 
             +
 
-            '-'
+            "-"
 
             +
 
@@ -1641,7 +1341,6 @@
 
               () => {
 
-
                 pendingRequests.delete(
                   requestId
                 );
@@ -1650,11 +1349,10 @@
                 reject(
 
                   new Error(
-                    'Apps Script 回應逾時'
+                    "Apps Script 回應逾時"
                   )
 
                 );
-
 
               },
 
@@ -1668,13 +1366,9 @@
             requestId,
 
             {
-
               resolve,
-
               reject,
-
               timer
-
             }
 
           );
@@ -1683,12 +1377,12 @@
           const form =
 
             document.createElement(
-              'form'
+              "form"
             );
 
 
           form.method =
-            'POST';
+            "POST";
 
 
           form.action =
@@ -1700,53 +1394,37 @@
 
 
           form.style.display =
-            'none';
+            "none";
 
 
           addHiddenField(
-
             form,
-
-            'action',
-
+            "action",
             action
-
           );
 
 
           addHiddenField(
-
             form,
-
-            'requestId',
-
+            "requestId",
             requestId
-
           );
 
 
           addHiddenField(
-
             form,
-
-            'clientNonce',
-
+            "clientNonce",
             clientNonce
-
           );
 
 
           addHiddenField(
-
             form,
-
-            'payload',
-
+            "payload",
             JSON.stringify(
               payload ||
               {}
             )
-
           );
 
 
@@ -1757,14 +1435,11 @@
 
           try {
 
-
             form.submit();
-
 
           }
 
           catch (err) {
-
 
             clearTimeout(
               timer
@@ -1780,14 +1455,11 @@
               err
             );
 
-
           }
 
           finally {
 
-
             form.remove();
-
 
           }
 
@@ -1808,16 +1480,15 @@
 
     ) {
 
-
       const input =
 
         document.createElement(
-          'input'
+          "input"
         );
 
 
       input.type =
-        'hidden';
+        "hidden";
 
 
       input.name =
@@ -1829,7 +1500,7 @@
         String(
 
           value == null
-            ? ''
+            ? ""
             : value
 
         );
@@ -1854,35 +1525,34 @@
 
     ) {
 
-
       showPanel(
-        'loading-screen'
+        "loading-screen"
       );
 
 
       const text =
 
         document.getElementById(
-          'loading-text'
+          "loading-text"
         );
 
 
       text.textContent =
 
-        '❌ ' +
+        "❌ " +
         title;
 
 
       text.style.color =
-        'red';
+        "red";
 
 
       document.getElementById(
-        'loading-detail'
+        "loading-detail"
       ).textContent =
 
         detail ||
-        '';
+        "";
 
     }
 
@@ -1891,21 +1561,18 @@
       panelId
     ) {
 
-
       document
 
         .querySelectorAll(
-          '.panel'
+          ".panel"
         )
 
         .forEach(
 
           panel => {
 
-
             panel.style.display =
-              'none';
-
+              "none";
 
           }
 
@@ -1915,7 +1582,7 @@
       document.getElementById(
         panelId
       ).style.display =
-        'block';
+        "block";
 
     }
 
@@ -1926,13 +1593,12 @@
 
     async function loginStudent() {
 
-
       const acc =
 
         document
 
           .getElementById(
-            'login-acc'
+            "login-acc"
           )
 
           .value
@@ -1945,7 +1611,7 @@
         document
 
           .getElementById(
-            'login-pw'
+            "login-pw"
           )
 
           .value;
@@ -1954,14 +1620,14 @@
       const errorBox =
 
         document.getElementById(
-          'login-error'
+          "login-error"
         );
 
 
       const button =
 
         document.getElementById(
-          'login-button'
+          "login-button"
         );
 
 
@@ -1970,10 +1636,8 @@
         !pw
       ) {
 
-
         errorBox.textContent =
-          '請輸入帳號及密碼。';
-
+          "請輸入帳號及密碼。";
 
         return;
 
@@ -1981,7 +1645,7 @@
 
 
       errorBox.textContent =
-        '';
+        "";
 
 
       button.disabled =
@@ -1989,17 +1653,16 @@
 
 
       button.textContent =
-        '登入中...';
+        "登入中...";
 
 
       try {
-
 
         const result =
 
           await postToAppsScript(
 
-            'login',
+            "login",
 
             {
 
@@ -2024,7 +1687,6 @@
 
         ) {
 
-
           errorBox.textContent =
 
             result &&
@@ -2032,7 +1694,7 @@
 
               ? result.message
 
-              : '帳號或密碼錯誤。';
+              : "帳號或密碼錯誤。";
 
 
           return;
@@ -2049,7 +1711,7 @@
 
 
         document.getElementById(
-          'setup-student-name'
+          "setup-student-name"
         ).textContent =
 
           currentStudent.name ||
@@ -2058,36 +1720,36 @@
 
 
         document.getElementById(
-          'setup-student-class'
+          "setup-student-class"
         ).textContent =
 
           currentStudent.className ||
 
-          '未設定';
+          "未設定";
 
 
         document.getElementById(
-          'setup-student-no'
+          "setup-student-no"
         ).textContent =
 
           currentStudent.studentNo ||
 
-          '—';
+          "—";
 
 
         document.getElementById(
-          'setup-student-no-row'
+          "setup-student-no-row"
         ).style.display =
 
           currentStudent.studentNo
 
-            ? 'block'
+            ? "block"
 
-            : 'none';
+            : "none";
 
 
         document.getElementById(
-          'current-player-name'
+          "current-player-name"
         ).textContent =
 
           currentStudent.name ||
@@ -2096,51 +1758,46 @@
 
 
         document.getElementById(
-          'current-player-class'
+          "current-player-class"
         ).textContent =
 
           currentStudent.className ||
 
-          '未設定';
+          "未設定";
 
 
         document.getElementById(
-          'login-pw'
+          "login-pw"
         ).value =
-          '';
+          "";
 
 
         showPanel(
-          'student-setup-panel'
+          "student-setup-panel"
         );
-
 
       }
 
       catch (err) {
 
-
         errorBox.textContent =
 
-          '登入失敗：'
+          "登入失敗："
 
           +
 
           err.message;
 
-
       }
 
       finally {
-
 
         button.disabled =
           false;
 
 
         button.textContent =
-          '登入系統';
-
+          "登入系統";
 
       }
 
@@ -2155,19 +1812,16 @@
       zipFileName
     ) {
 
-
       const zipRes =
 
         await fetch(
 
-          './' +
+          "./" +
           zipFileName,
 
           {
-
             cache:
-              'no-cache'
-
+              "no-cache"
           }
 
         );
@@ -2177,12 +1831,11 @@
         !zipRes.ok
       ) {
 
-
         throw new Error(
 
           zipFileName +
 
-          ' 找不到'
+          " 找不到"
 
         );
 
@@ -2207,13 +1860,10 @@
 
 
       Object.keys(
-
         zipContent.files
-
       ).forEach(
 
         filename => {
-
 
           const zipEntry =
 
@@ -2235,11 +1885,10 @@
             ||
 
             filename.includes(
-              '__MACOSX'
+              "__MACOSX"
             )
 
           ) {
-
 
             return;
 
@@ -2249,20 +1898,15 @@
           const shortName =
 
             filename
-
-              .split('/')
-
+              .split("/")
               .pop();
 
 
           const nameWithoutExt =
 
             shortName.replace(
-
               /\.[^.]+$/,
-
-              ''
-
+              ""
             );
 
 
@@ -2284,31 +1928,27 @@
 
           promises.push(
 
-
             zipEntry
 
               .async(
-                'base64'
+                "base64"
               )
 
               .then(
 
                 base64Data => {
 
-
                   const ext =
 
                     (
 
                       shortName
-
-                        .split('.')
-
+                        .split(".")
                         .pop()
 
                       ||
 
-                      ''
+                      ""
 
                     )
 
@@ -2318,22 +1958,22 @@
                   const mimeMap = {
 
                     jpg:
-                      'image/jpeg',
+                      "image/jpeg",
 
                     jpeg:
-                      'image/jpeg',
+                      "image/jpeg",
 
                     png:
-                      'image/png',
+                      "image/png",
 
                     gif:
-                      'image/gif',
+                      "image/gif",
 
                     bmp:
-                      'image/bmp',
+                      "image/bmp",
 
                     webp:
-                      'image/webp'
+                      "image/webp"
 
                   };
 
@@ -2343,20 +1983,15 @@
                     answer:
 
                       answerMatch[0]
-
                         .toLowerCase(),
 
 
                     imgSrc:
 
                       `data:${
-
                         mimeMap[ext]
-
                         ||
-
-                        'image/png'
-
+                        "image/png"
                       };base64,${base64Data}`
 
                   });
@@ -2381,7 +2016,6 @@
 
     async function prepareGame() {
 
-
       if (
 
         !currentStudent ||
@@ -2390,14 +2024,12 @@
 
       ) {
 
-
         alert(
-          '登入狀態已失效，請重新登入。'
+          "登入狀態已失效，請重新登入。"
         );
 
 
         location.reload();
-
 
         return;
 
@@ -2407,7 +2039,7 @@
       const catSelect =
 
         document.getElementById(
-          'category-select'
+          "category-select"
         );
 
 
@@ -2418,41 +2050,39 @@
       currentCategoryText =
 
         catSelect.options[
-
           catSelect.selectedIndex
-
         ].text;
 
 
       document.getElementById(
-        'current-cat-name'
+        "current-cat-name"
       ).textContent =
 
         currentCategoryText;
 
 
       showPanel(
-        'loading-screen'
+        "loading-screen"
       );
 
 
       document.getElementById(
-        'loading-text'
+        "loading-text"
       ).textContent =
 
         `🔄 正在載入「${currentCategoryText}」題庫，請稍候...`;
 
 
       document.getElementById(
-        'loading-text'
+        "loading-text"
       ).style.color =
-        '#555';
+        "#555";
 
 
       document.getElementById(
-        'loading-detail'
+        "loading-detail"
       ).textContent =
-        '';
+        "";
 
 
       questionBank =
@@ -2461,43 +2091,39 @@
 
       try {
 
-
         if (
           catValue ===
-          'all'
+          "all"
         ) {
-
 
           await Promise.all([
 
             loadZipData(
-              'cat1.zip'
+              "cat1.zip"
             ),
 
             loadZipData(
-              'cat2.zip'
+              "cat2.zip"
             ),
 
             loadZipData(
-              'cat3.zip'
+              "cat3.zip"
             ),
 
             loadZipData(
-              'cat4.zip'
+              "cat4.zip"
             )
 
           ]);
-
 
         }
 
         else {
 
-
           await loadZipData(
 
             catValue +
-            '.zip'
+            ".zip"
 
           );
 
@@ -2511,9 +2137,8 @@
 
         ) {
 
-
           throw new Error(
-            '題庫內沒有可用圖片'
+            "題庫內沒有可用圖片"
           );
 
         }
@@ -2521,15 +2146,13 @@
 
         startGame();
 
-
       }
 
       catch (err) {
 
-
         alert(
 
-          '載入題庫發生錯誤：'
+          "載入題庫發生錯誤："
 
           +
 
@@ -2537,13 +2160,13 @@
 
           +
 
-          '\n請確認 GitHub 已上傳對應的 ZIP 檔案。'
+          "\n請確認 GitHub 已上傳對應的 ZIP 檔案。"
 
         );
 
 
         showPanel(
-          'student-setup-panel'
+          "student-setup-panel"
         );
 
       }
@@ -2558,7 +2181,6 @@
     function formatTime(
       seconds
     ) {
-
 
       const s =
 
@@ -2590,19 +2212,19 @@
         String(m)
           .padStart(
             2,
-            '0'
+            "0"
           )
 
         +
 
-        ':'
+        ":"
 
         +
 
         String(sec)
           .padStart(
             2,
-            '0'
+            "0"
           )
 
       );
@@ -2611,7 +2233,6 @@
 
 
     function startGame() {
-
 
       const minutes =
 
@@ -2626,11 +2247,9 @@
             parseInt(
 
               document
-
                 .getElementById(
-                  'practice-minutes'
+                  "practice-minutes"
                 )
-
                 .value,
 
               10
@@ -2655,39 +2274,6 @@
         totalSeconds;
 
 
-      showPanel(
-        'game-panel'
-      );
-
-
-      const qBox =
-
-        document.getElementById(
-          'question-box'
-        );
-
-
-      qBox.style.display =
-        'block';
-
-
-      qBox.style.width =
-        '';
-
-
-      qBox.style.borderColor =
-        '#333';
-
-
-      questionBank.sort(
-
-        () =>
-          Math.random() -
-          0.5
-
-      );
-
-
       questionsAttempted =
         0;
 
@@ -2698,6 +2284,10 @@
 
       mistakes =
         0;
+
+
+      wrongAnswers =
+        [];
 
 
       currentQuestionIndex =
@@ -2716,10 +2306,36 @@
         true;
 
 
+      questionBank.sort(
+
+        () =>
+          Math.random() -
+          0.5
+
+      );
+
+
+      showPanel(
+        "game-panel"
+      );
+
+
       document.getElementById(
-        'player'
+        "player"
       ).style.left =
-        '50px';
+        "50px";
+
+
+      document.getElementById(
+        "player"
+      ).style.bottom =
+        "50px";
+
+
+      document.getElementById(
+        "question-box"
+      ).style.borderColor =
+        "#333";
 
 
       updateHUD();
@@ -2744,7 +2360,6 @@
 
           () => {
 
-
             timeLeft--;
 
 
@@ -2755,7 +2370,6 @@
               timeLeft <=
               0
             ) {
-
 
               endGame(
                 false
@@ -2774,7 +2388,6 @@
 
     function showNextQuestion() {
 
-
       currentQuestionIndex =
 
         Math.floor(
@@ -2789,15 +2402,13 @@
 
 
       document.getElementById(
-        'current-image'
+        "current-image"
       ).innerHTML =
 
         `<img src="${
-
           questionBank[
             currentQuestionIndex
           ].imgSrc
-
         }" alt="題目圖片">`;
 
     }
@@ -2805,10 +2416,9 @@
 
     window.addEventListener(
 
-      'keydown',
+      "keydown",
 
       event => {
-
 
         if (
           !isPlaying
@@ -2822,11 +2432,11 @@
         const userInput =
 
           event.key
-
             .toLowerCase();
 
 
         // 只接受單一 a-z
+        // Shift、Tab、Ctrl、方向鍵等不計錯
 
         if (
 
@@ -2841,15 +2451,24 @@
         }
 
 
-        const correctAnswer =
+        const currentQuestion =
 
           questionBank[
             currentQuestionIndex
-          ].answer;
+          ];
+
+
+        const correctAnswer =
+
+          currentQuestion.answer;
 
 
         questionsAttempted++;
 
+
+        // =============================
+        // 答對
+        // =============================
 
         if (
 
@@ -2857,7 +2476,6 @@
           correctAnswer
 
         ) {
-
 
           correctAnswers++;
 
@@ -2875,7 +2493,7 @@
 
 
           document.getElementById(
-            'player'
+            "player"
           ).style.left =
 
             (
@@ -2902,25 +2520,23 @@
 
             +
 
-            'px';
+            "px";
 
 
           document.getElementById(
-            'player'
+            "player"
           ).style.bottom =
-            '90px';
+            "90px";
 
 
           setTimeout(
 
             () => {
 
-
               document.getElementById(
-                'player'
+                "player"
               ).style.bottom =
-                '50px';
-
+                "50px";
 
             },
 
@@ -2928,13 +2544,34 @@
 
           );
 
-
         }
+
+        // =============================
+        // 答錯
+        // =============================
 
         else {
 
-
           mistakes++;
+
+
+          // 記錄錯題
+
+          wrongAnswers.push({
+
+            attemptNumber:
+              questionsAttempted,
+
+            imgSrc:
+              currentQuestion.imgSrc,
+
+            userAnswer:
+              userInput,
+
+            correctAnswer:
+              correctAnswer
+
+          });
 
 
           currentSpeed =
@@ -2950,21 +2587,19 @@
 
 
           document.getElementById(
-            'question-box'
+            "question-box"
           ).style.borderColor =
-            'red';
+            "red";
 
 
           setTimeout(
 
             () => {
 
-
               document.getElementById(
-                'question-box'
+                "question-box"
               ).style.borderColor =
-                '#333';
-
+                "#333";
 
             },
 
@@ -2985,19 +2620,15 @@
 
         ) {
 
-
           endGame(
             true
           );
-
 
         }
 
         else {
 
-
           showNextQuestion();
-
 
         }
 
@@ -3007,7 +2638,6 @@
 
 
     function gameLoop() {
-
 
       if (
         !isPlaying
@@ -3031,7 +2661,6 @@
         -800
       ) {
 
-
         bgOffset =
           0;
 
@@ -3039,14 +2668,14 @@
 
 
       document.getElementById(
-        'background'
+        "background"
       ).style.transform =
 
         `translateX(${bgOffset}px)`;
 
 
       document.getElementById(
-        'speed-display'
+        "speed-display"
       ).textContent =
 
         Math.floor(
@@ -3066,9 +2695,8 @@
 
     function updateHUD() {
 
-
       document.getElementById(
-        'time-display'
+        "time-display"
       ).textContent =
 
         formatTime(
@@ -3077,14 +2705,14 @@
 
 
       document.getElementById(
-        'distance-display'
+        "distance-display"
       ).textContent =
 
         `${questionsAttempted} / ${TOTAL_QUESTIONS}`;
 
 
       document.getElementById(
-        'score-display'
+        "score-display"
       ).textContent =
 
         correctAnswers;
@@ -3093,13 +2721,116 @@
 
 
     // ==============================================================
-    // 結束及上傳成績
+    // 錯題顯示
+    // ==============================================================
+
+    function renderWrongAnswers() {
+
+      const container =
+
+        document.getElementById(
+          "wrong-review"
+        );
+
+
+      // 全部答對
+
+      if (
+        wrongAnswers.length ===
+        0
+      ) {
+
+        container.innerHTML = `
+
+          <div class="perfect-box">
+
+            🎉 全部答對！本次測驗沒有錯題。
+
+          </div>
+
+        `;
+
+        return;
+
+      }
+
+
+      // 建立錯題卡
+
+      const cards =
+
+        wrongAnswers
+
+          .map(
+
+            item => `
+
+              <div class="wrong-card">
+
+                <div class="wrong-title">
+
+                  第 ${item.attemptNumber} 題
+
+                </div>
+
+
+                <img
+                  src="${item.imgSrc}"
+                  alt="錯題圖片">
+
+
+                <div class="answer-row">
+
+                  你的答案：
+
+                  <span class="answer-wrong">
+
+                    ${escapeHtml(
+                      item.userAnswer
+                    )}
+
+                  </span>
+
+                </div>
+
+
+                <div class="answer-row">
+
+                  正確答案：
+
+                  <span class="answer-correct">
+
+                    ${escapeHtml(
+                      item.correctAnswer
+                    )}
+
+                  </span>
+
+                </div>
+
+              </div>
+
+            `
+
+          )
+
+          .join("");
+
+
+      container.innerHTML =
+
+        `<div class="wrong-grid">${cards}</div>`;
+
+    }
+
+
+    // ==============================================================
+    // 結束測驗
     // ==============================================================
 
     async function endGame(
       isFinishedAll
     ) {
-
 
       if (
         !isPlaying
@@ -3123,154 +2854,139 @@
 
         isFinishedAll
 
-          ? '✅ 完成100題'
+          ? "✅ 完成100題"
 
-          : '⏳ 時間到';
+          : "⏳ 時間到";
 
 
-      const title =
+      const accuracy =
+
+        questionsAttempted >
+        0
+
+          ? Math.round(
+
+              (
+
+                correctAnswers
+
+                /
+
+                questionsAttempted
+
+              )
+
+              *
+
+              100
+
+            )
+
+          : 0;
+
+
+      // =============================
+      // 顯示成績
+      // =============================
+
+      document.getElementById(
+        "result-title"
+      ).textContent =
 
         isFinishedAll
 
-          ? '<h2 style="color:#4CAF50;">🎉 完成測驗！</h2>'
+          ? "🎉 完成測驗！"
 
-          : '<h2 style="color:#e52521;">⏳ 時間到！</h2>';
+          : "⏳ 時間到！";
 
 
-      const safeName =
+      document.getElementById(
+        "result-title"
+      ).style.color =
 
-        escapeHtml(
+        isFinishedAll
 
+          ? "#2e7d32"
+
+          : "#e52521";
+
+
+      document.getElementById(
+        "result-student"
+      ).textContent =
+
+        `${
           currentStudent.name
-
           ||
-
           currentStudent.account
-
-        );
-
-
-      const safeClass =
-
-        escapeHtml(
-
+        }（${
           currentStudent.className
-
           ||
-
-          '未設定班別'
-
-        );
-
-
-      const safeCategory =
-
-        escapeHtml(
-          currentCategoryText
-        );
+          "未設定班別"
+        }）`;
 
 
       document.getElementById(
-        'question-box'
-      ).innerHTML = `
+        "result-category"
+      ).textContent =
 
-
-        ${title}
-
-
-        <div
-          style="
-            font-size:16px;
-            margin-bottom:8px;
-          ">
-
-          ${safeName}
-
-          （${safeClass}）
-
-        </div>
-
-
-        <div
-          style="
-            font-size:16px;
-            margin-bottom:10px;
-          ">
-
-          類別：
-
-          <b>
-            ${safeCategory}
-          </b>
-
-        </div>
-
-
-        <div
-          style="font-size:18px;">
-
-          答對：
-          ${correctAnswers}
-          題
-
-          ｜
-
-          答錯：
-          ${mistakes}
-          題
-
-        </div>
-
-
-        <div
-          style="
-            font-size:26px;
-            font-weight:bold;
-            margin:10px 0;
-          ">
-
-          得分：
-          ${correctAnswers}
-          分
-
-        </div>
-
-
-        <div
-
-          id="upload-status"
-
-          style="
-            color:#FF9800;
-            font-weight:bold;
-            margin-top:10px;
-          ">
-
-          ⏳ 正在將成績傳送給老師...
-
-        </div>
-
-
-        <button
-
-          onclick="location.reload()"
-
-          style="
-            margin-top:15px;
-            padding:10px 18px;
-          ">
-
-          回首頁
-
-        </button>
-
-      `;
+        `類別：${currentCategoryText}`;
 
 
       document.getElementById(
-        'question-box'
-      ).style.width =
-        '440px';
+        "result-attempted"
+      ).textContent =
+
+        questionsAttempted;
+
+
+      document.getElementById(
+        "result-correct"
+      ).textContent =
+
+        correctAnswers;
+
+
+      document.getElementById(
+        "result-wrong"
+      ).textContent =
+
+        mistakes;
+
+
+      document.getElementById(
+        "result-accuracy"
+      ).textContent =
+
+        accuracy +
+        "%";
+
+
+      // 顯示錯題
+
+      renderWrongAnswers();
+
+
+      // 切換至結果畫面
+
+      showPanel(
+        "result-panel"
+      );
+
+
+      const uploadStatus =
+
+        document.getElementById(
+          "upload-status"
+        );
+
+
+      uploadStatus.textContent =
+        "⏳ 正在將成績傳送給老師...";
+
+
+      uploadStatus.style.color =
+        "#ff9800";
 
 
       const timeUsed =
@@ -3291,14 +3007,17 @@
         );
 
 
-      try {
+      // =============================
+      // 儲存成績
+      // =============================
 
+      try {
 
         const result =
 
           await postToAppsScript(
 
-            'saveResult',
+            "saveResult",
 
             {
 
@@ -3307,7 +3026,6 @@
 
 
               result: {
-
 
                 category:
                   currentCategoryText,
@@ -3349,13 +3067,6 @@
           );
 
 
-        const status =
-
-          document.getElementById(
-            'upload-status'
-          );
-
-
         if (
 
           result &&
@@ -3364,19 +3075,16 @@
 
         ) {
 
+          uploadStatus.textContent =
+            "✅ 成績已成功寫入老師的 Google Sheet！";
 
-          status.textContent =
-            '✅ 成績已成功寫入老師的 Google Sheet！';
 
-
-          status.style.color =
-            'green';
-
+          uploadStatus.style.color =
+            "green";
 
         }
 
         else {
-
 
           throw new Error(
 
@@ -3385,28 +3093,19 @@
 
               ? result.message
 
-              : '伺服器未確認寫入成功'
+              : "伺服器未確認寫入成功"
 
           );
 
         }
 
-
       }
 
       catch (err) {
 
+        uploadStatus.textContent =
 
-        const status =
-
-          document.getElementById(
-            'upload-status'
-          );
-
-
-        status.textContent =
-
-          '❌ 成績傳送失敗：'
+          "❌ 成績傳送失敗："
 
           +
 
@@ -3414,55 +3113,55 @@
 
           +
 
-          '。請截圖交給老師。';
+          "。請截圖交給老師。";
 
 
-        status.style.color =
-          'red';
+        uploadStatus.style.color =
+          "red";
 
       }
 
     }
 
 
+    // ==============================================================
+    // HTML 安全處理
+    // ==============================================================
+
     function escapeHtml(
       value
     ) {
-
 
       return String(value)
 
         .replace(
           /&/g,
-          '&amp;'
+          "&amp;"
         )
 
         .replace(
           /</g,
-          '&lt;'
+          "&lt;"
         )
 
         .replace(
           />/g,
-          '&gt;'
+          "&gt;"
         )
 
         .replace(
           /"/g,
-          '&quot;'
+          "&quot;"
         )
 
         .replace(
           /'/g,
-          '&#039;'
+          "&#039;"
         );
 
     }
 
-
   </script>
 
-
 </body>
-
 </html>
