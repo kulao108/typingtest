@@ -184,91 +184,549 @@
        遊戲
        ========================= */
 
+
+    /* =========================
+       角色選擇
+       ========================= */
+    .character-picker {
+      width: 94%;
+      max-width: 620px;
+      margin: 22px auto 14px;
+      text-align: center;
+    }
+
+    .character-picker h3 {
+      margin: 0 0 5px;
+      color: #174d98;
+      font-size: 21px;
+    }
+
+    .character-help {
+      margin: 4px 0 14px;
+      font-size: 13px;
+      color: #627185;
+    }
+
+    .character-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .character-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      border: 3px solid #dde7f5;
+      border-radius: 17px;
+      background: linear-gradient(#fff, #edf5ff);
+      padding: 12px 3px 10px;
+      min-width: 0;
+      font-size: 15px;
+      font-weight: 850;
+      cursor: pointer;
+      color: #243c5d;
+      transition: transform .15s, border-color .15s, box-shadow .15s;
+    }
+
+    .character-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 7px 12px #283c681c;
+    }
+
+    .character-card.selected {
+      border-color: #ffb600;
+      background: linear-gradient(#fffce6,#ffeaa5);
+      box-shadow: 0 0 0 3px #ffe59199, 0 8px 15px #f5a40027;
+    }
+
+    .character-avatar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 84px;
+      width: 80px;
+    }
+
+    .character-avatar svg {
+      display: block;
+      width: 76px;
+      height: 82px;
+      filter: drop-shadow(0 4px 0 #0002);
+    }
+
+    .character-picked {
+      font-size: 12px;
+      height: 14px;
+      color: #9c6000;
+    }
+
+    /* =========================
+       跑酷遊戲：色彩鮮明的蘑菇王國場景
+       題目卡固定不動；只讓背景／人物動起來
+       ========================= */
+
     .game-title {
-      margin-top: 0;
+      margin: 0 0 11px;
       line-height: 1.5;
+      background: #fff;
+      padding: 8px 12px;
+      border-radius: 14px;
+      font-size: 17px;
+      box-shadow: 0 3px 0 #d3e7ff;
     }
 
     #hud {
       display: flex;
-      justify-content: space-between;
-      gap: 8px;
-      padding: 10px 20px;
-      font-size: 18px;
-      font-weight: 700;
-      background: #333;
+      align-items: center;
+      justify-content: space-around;
+      flex-wrap: wrap;
+      gap: 7px;
+      padding: 9px 12px;
+      font-size: 15px;
+      font-weight: 850;
       color: #fff;
-      border-radius: 5px;
-      width: 760px;
-      margin: 0 auto 15px;
+      background: #203b7a;
+      border: 3px solid #4565aa;
+      border-radius: 15px;
+      max-width: 820px;
+      margin: 0 auto 10px;
+      box-shadow: 0 5px 0 #102652;
+    }
+
+    #hud > div {
+      white-space: nowrap;
+    }
+
+    .race-progress {
+      height: 10px;
+      max-width: 820px;
+      border: 2px solid #263d70;
+      border-radius: 99px;
+      overflow: hidden;
+      margin: 0 auto 10px;
+      background: #dce5f5;
+    }
+
+    #race-progress-fill {
+      display: block;
+      width: 0;
+      height: 100%;
+      background: linear-gradient(90deg, #ffcd28, #ff7434, #ff3975);
+      transition: width .16s ease-out;
     }
 
     #game-container {
-      width: 800px;
-      height: 350px;
-      margin: 0 auto;
-      background: #87ceeb;
       position: relative;
-      border: 4px solid #333;
-      border-radius: 10px;
+      width: min(100%, 820px);
+      height: 430px;
+      margin: 0 auto;
       overflow: hidden;
-      box-shadow: 0 10px 20px rgba(0, 0, 0, .2);
+      border: 6px solid #39417b;
+      border-radius: 19px;
+      background: linear-gradient(#52bafb 0%, #91dfff 52%, #caf4ff 79%, #eafcff 100%);
+      box-shadow: 0 9px 0 #253365, 0 20px 32px #173a693d;
+      isolation: isolate;
     }
 
-    #background {
+    #sky-shine {
       position: absolute;
-      width: 200%;
+      z-index: 0;
+      inset: 0;
+      background: radial-gradient(ellipse at 78% 15%, #fff8b5e0, transparent 38%);
+      pointer-events: none;
+    }
+
+    .parallax {
+      position: absolute;
+      width: 245%;
       height: 100%;
-      background-image: repeating-linear-gradient(
-        90deg,
-        transparent,
-        transparent 100px,
-        rgba(255, 255, 255, .3) 100px,
-        rgba(255, 255, 255, .3) 200px
-      );
-      bottom: 0;
       left: 0;
-      z-index: 1;
+      top: 0;
+      pointer-events: none;
+      will-change: transform;
+    }
+
+    #cloud-layer { z-index: 1; }
+    #mountain-layer { z-index: 2; }
+    #hill-layer { z-index: 3; }
+    #scenery-layer { z-index: 4; }
+
+    .cloud {
+      position: absolute;
+      width: 98px;
+      height: 30px;
+      background: #fff;
+      border: 3px solid #d4effc;
+      border-radius: 28px;
+      box-shadow: 0 5px 0 #74bce341;
+    }
+
+    .cloud::before, .cloud::after {
+      content: "";
+      position: absolute;
+      background: #fff;
+      border-radius: 50%;
+    }
+
+    .cloud::before {
+      width: 47px;
+      height: 47px;
+      top: -27px;
+      left: 14px;
+    }
+
+    .cloud::after {
+      width: 39px;
+      height: 37px;
+      top: -19px;
+      right: 9px;
+    }
+
+    .mountain {
+      position: absolute;
+      bottom: 72px;
+      width: 280px;
+      height: 210px;
+      background: linear-gradient(125deg,#8bceff,#5ea8e5);
+      clip-path: polygon(50% 3%, 100% 100%, 0 100%);
+      filter: drop-shadow(0 7px 0 #ffffff33);
+    }
+
+    .mountain::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 30%;
+      width: 40%;
+      height: 90px;
+      background: #ecfaff;
+      clip-path: polygon(50% 0,100% 100%,70% 78%,50% 100%,24% 70%,0 100%);
+    }
+
+    .hill {
+      position: absolute;
+      bottom: 70px;
+      width: 235px;
+      height: 123px;
+      border-radius: 150px 150px 0 0;
+      background: #7cdf4e;
+      border: 5px solid #43a341;
+      border-bottom: none;
+    }
+
+    .hill::before, .hill::after {
+      content: "";
+      position: absolute;
+      width: 17px;
+      height: 32px;
+      border-radius: 50%;
+      background: #2f9c36;
+      top: 36px;
+    }
+
+    .hill::before { left: 83px; }
+    .hill::after { left: 125px; }
+
+    .brick {
+      position: absolute;
+      width: 42px;
+      height: 42px;
+      background:
+        linear-gradient(90deg,transparent 45%,#a43a25 46%,#a43a25 53%,transparent 54%) center / 90% 50%,
+        repeating-linear-gradient(0deg,#ed8b4d 0 16px,#a73e28 17px 20px);
+      border: 4px solid #a6482e;
+      border-radius: 4px;
+      box-shadow: inset 3px 3px #ffc18b, 0 5px 0 #7d3a26;
+    }
+
+    .question-block {
+      background: #ffbf28;
+      border: 4px solid #da7b16;
+      box-shadow: inset 4px 4px #ffeaa1,0 5px 0 #a95c13;
+      color: white;
+      font-weight: 900;
+      font-family: monospace;
+      font-size: 30px;
+      text-align: center;
+      line-height: 31px;
+    }
+
+    .coin {
+      position: absolute;
+      width: 29px;
+      height: 37px;
+      background: linear-gradient(90deg,#ffaf05,#fff2a0 46%,#ffb909);
+      border: 4px solid #db8d00;
+      border-radius: 50%;
+      box-shadow: 0 0 14px #fff9b5a8;
+      animation: coinFloat 1.6s ease-in-out infinite alternate;
+    }
+
+    .coin::after {
+      content: "";
+      position: absolute;
+      left: 8px;
+      top: 5px;
+      height: 17px;
+      border-left: 3px solid #fff5b7;
+      border-radius: 50%;
+    }
+
+    .pipe {
+      position: absolute;
+      bottom: 69px;
+      width: 75px;
+      height: 88px;
+      background: linear-gradient(90deg,#117e4c,#55d976 25%,#32b565 68%,#157c4e);
+      border: 5px solid #136442;
+      border-top: none;
+      border-radius: 3px 3px 0 0;
+    }
+
+    .pipe::before {
+      content: "";
+      position: absolute;
+      left: -13px;
+      top: -13px;
+      width: 91px;
+      height: 27px;
+      background: linear-gradient(90deg,#13a357,#86f093 24%,#3ac872 75%,#188d50);
+      border: 4px solid #12673f;
+      border-radius: 5px;
+    }
+
+    .finish-flag {
+      position: absolute;
+      bottom: 70px;
+      right: 28px;
+      z-index: 5;
+      height: 153px;
+      width: 6px;
+      background: #fff;
+      border: 2px solid #50678f;
+      box-shadow: 2px 0 #a3c6e7;
+    }
+
+    .finish-flag::before {
+      content: "🏁";
+      position: absolute;
+      top: -12px;
+      left: 1px;
+      font-size: 35px;
+    }
+
+    #track-lane {
+      position: absolute;
+      bottom: 68px;
+      width: 100%;
+      height: 23px;
+      z-index: 6;
+      background:
+        repeating-linear-gradient(90deg,transparent 0 43px,#ffffffbb 44px 71px,transparent 72px 112px),
+        linear-gradient(#b5e75d,#6bc743);
+      border-top: 5px solid #449d38;
     }
 
     #ground {
       position: absolute;
       bottom: 0;
       width: 100%;
-      height: 60px;
-      background: #8b4513;
-      border-top: 6px solid #228b22;
-      z-index: 3;
+      height: 70px;
+      z-index: 6;
+      border-top: 7px solid #5bb33d;
+      background-color: #d58b47;
+      background-image:
+        linear-gradient(90deg,#97502a 2px,transparent 2px),
+        linear-gradient(0deg,#a45a2c 2px,transparent 2px);
+      background-size: 46px 37px;
+      box-shadow: inset 0 5px 0 #f5b26a;
+      will-change: background-position;
     }
 
     #player {
-      font-size: 60px;
       position: absolute;
-      bottom: 50px;
-      left: 50px;
-      z-index: 4;
-      transition: bottom .15s ease-out, left .3s ease-out;
+      z-index: 11;
+      left: 7%;
+      bottom: 77px;
+      width: 105px;
+      height: 125px;
+      pointer-events: none;
+      transition: left .19s ease-out;
+    }
+
+    .player-sprite {
+      width: 100%;
+      height: 100%;
+      transform-origin: 50% 96%;
+    }
+
+    .player-sprite svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 6px 0 #143d4e54);
+    }
+
+    #player.running .player-sprite {
+      animation: spriteSprint var(--run-duration, .45s) ease-in-out infinite alternate;
+    }
+
+    .runner-shadow {
+      position: absolute;
+      bottom: -6px;
+      left: 18px;
+      width: 73px;
+      height: 12px;
+      border-radius: 100%;
+      background: #205b4166;
+      filter: blur(3px);
+      z-index: -1;
+    }
+
+    #speed-lines {
+      position: absolute;
+      left: 4%;
+      bottom: 95px;
+      height: 100px;
+      width: 31%;
+      z-index: 9;
+      opacity: 0;
+      pointer-events: none;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent 0 15px,
+        #ffffffb3 16px 19px,
+        transparent 20px 37px
+      );
+      clip-path: polygon(0 12%,100% 0,100% 100%,0 85%);
+      transform: translateX(-18px);
+      transition: opacity .18s;
+    }
+
+    #game-container.speed-fast #speed-lines {
+      opacity: .85;
+      animation: speedSweep .24s linear infinite;
+    }
+
+    #race-badge {
+      position: absolute;
+      top: 13px;
+      left: 12px;
+      z-index: 8;
+      padding: 6px 10px;
+      background: #ffffffd9;
+      border: 2px solid #5491c3;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 850;
+      color: #20517f;
+      pointer-events: none;
     }
 
     #question-box {
       position: absolute;
-      top: 10%;
+      top: 14px;
       left: 50%;
+      z-index: 20;
       transform: translateX(-50%);
-      z-index: 5;
-      background: rgba(255, 255, 255, .96);
-      padding: 15px 30px;
-      border-radius: 10px;
-      border: 4px solid #333;
+      width: 244px;
+      max-width: 65%;
+      min-height: 249px;
+      padding: 12px 13px;
+      background: #fff;
+      border: 5px solid #ffcd31;
+      border-radius: 19px;
+      box-shadow: 0 7px 0 #cc7e18, 0 13px 22px #1d507741;
       text-align: center;
-      transition: border-color .2s;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, .2);
+      transition: border-color .15s;
+    }
+
+    .question-caption {
+      margin: 0 0 8px;
+      font-size: 15px;
+      color: #b16505;
+      font-weight: 900;
+      letter-spacing: .4px;
+    }
+
+    .question-image {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 127px;
+      border-radius: 10px;
+      background: #fff;
+      border: 2px solid #e5ecf3;
     }
 
     .question-image img {
-      max-width: 120px;
-      max-height: 120px;
-      border-radius: 5px;
+      display: block;
+      width: auto;
+      height: auto;
+      max-width: 100%;
+      max-height: 134px;
+      object-fit: contain;
+      border-radius: 4px;
+      image-rendering: auto;
+    }
+
+    #answer-input {
+      width: 100%;
+      height: 35px;
+      border: 2px solid #77acd9;
+      border-radius: 9px;
+      margin: 10px auto 0;
+      background: #f1f9ff;
+      outline: none;
+      font-size: 19px;
+      text-align: center;
+      font-weight: 800;
+      letter-spacing: 1px;
+      color: #193d67;
+    }
+
+    #answer-input:focus {
+      border-color: #ffb70b;
+      box-shadow: 0 0 0 3px #fff0ab;
+    }
+
+    #answer-feedback {
+      min-height: 16px;
+      margin-top: 4px;
+      font-size: 11px;
+      font-weight: 800;
+      color: #2a8053;
+    }
+
+    .typing-help {
+      font-size: 10px;
+      color: #657a8f;
+      margin-top: 3px;
+      line-height: 1.3;
+    }
+
+    @keyframes coinFloat {
+      to { transform: translateY(-11px); }
+    }
+
+    @keyframes spriteSprint {
+      from { transform: translateY(0) rotate(-4deg) scaleX(.98); }
+      to { transform: translateY(-11px) rotate(4deg) scaleX(1.02); }
+    }
+
+    @keyframes speedSweep {
+      from { background-position-x: 0; }
+      to { background-position-x: -95px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      #player.running .player-sprite,
+      #game-container.speed-fast #speed-lines,
+      .coin {
+        animation: none !important;
+      }
     }
 
     /* =========================
@@ -452,7 +910,33 @@
       }
 
       .game-title {
-        font-size: 18px;
+        font-size: 15px;
+      }
+
+      #game-container {
+        height: 417px;
+      }
+
+      #question-box {
+        max-width: 71%;
+        width: 220px;
+        min-height: 244px;
+        padding: 9px 10px;
+      }
+
+      #player {
+        width: 84px;
+        height: 103px;
+        bottom: 77px;
+      }
+
+      .character-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      #race-badge {
+        font-size: 10px;
+        padding: 4px 6px;
       }
 
       .result-summary {
@@ -588,6 +1072,33 @@
 
     </div>
 
+    <!-- 必須選擇角色才可開始 -->
+    <section class="character-picker" aria-label="選擇賽跑角色">
+      <h3>🎮 選擇你的賽跑角色</h3>
+      <div class="character-help">先選角色，再選練習類別；每次測驗可重新選擇。</div>
+      <div class="character-grid">
+        <button type="button" class="character-card" data-character="mario" onclick="chooseCharacter('mario')" aria-pressed="false">
+          <span class="character-avatar" id="avatar-mario"></span>
+          <span>Mario</span>
+          <span class="character-picked">瑪利奧</span>
+        </button>
+        <button type="button" class="character-card" data-character="luigi" onclick="chooseCharacter('luigi')" aria-pressed="false">
+          <span class="character-avatar" id="avatar-luigi"></span>
+          <span>Luigi</span>
+          <span class="character-picked">路易吉</span>
+        </button>
+        <button type="button" class="character-card" data-character="toad" onclick="chooseCharacter('toad')" aria-pressed="false">
+          <span class="character-avatar" id="avatar-toad"></span>
+          <span>Toad</span>
+          <span class="character-picked">奇諾比奧</span>
+        </button>
+        <button type="button" class="character-card" data-character="peach" onclick="chooseCharacter('peach')" aria-pressed="false">
+          <span class="character-avatar" id="avatar-peach"></span>
+          <span>Peach</span>
+          <span class="character-picked">碧姬公主</span>
+        </button>
+      </div>
+    </section>
 
     <div style="margin:15px 0;">
 
@@ -720,14 +1231,20 @@
 
       6. 100題會按所選題庫公平輪替：每個字先完整出現一輪，才開始下一輪；最後不足一輪的題數才隨機抽取，且同一輪不重複。
 
+      <br>
+
+      7. 支援全形（Ａ、Ｂ）與半形（A、B）英文字母；打字越快，角色跑得越快。
+
     </div>
 
 
     <button
+      id="start-button"
       class="btn btn-start"
-      onclick="prepareGame()">
+      onclick="prepareGame()"
+      disabled>
 
-      ▶️ 準備好，開始狂奔
+      🎮 請先選擇角色
 
     </button>
 
@@ -817,6 +1334,14 @@
 
       </div>
 
+      <div>
+
+        手速：
+        <span id="typing-rate" style="color:#a8fff3;">0.0</span>
+        字/秒
+
+      </div>
+
 
       <div>
 
@@ -837,34 +1362,82 @@
     </div>
 
 
+    <div class="race-progress" aria-label="測驗進度">
+      <span id="race-progress-fill"></span>
+    </div>
+
     <div id="game-container">
 
-      <div id="background"></div>
+      <!-- 移動風景：題目區會保持固定 -->
+      <div id="sky-shine" aria-hidden="true"></div>
 
-      <div id="ground"></div>
-
-      <div id="player">
-        🏃‍♂️‍➡
+      <div id="cloud-layer" class="parallax" aria-hidden="true">
+        <span class="cloud" style="left:3%;top:80px"></span>
+        <span class="cloud" style="left:22%;top:58px"></span>
+        <span class="cloud" style="left:42%;top:107px"></span>
+        <span class="cloud" style="left:63%;top:65px"></span>
+        <span class="cloud" style="left:81%;top:96px"></span>
       </div>
 
+      <div id="mountain-layer" class="parallax" aria-hidden="true">
+        <span class="mountain" style="left:2%"></span>
+        <span class="mountain" style="left:29%;height:245px"></span>
+        <span class="mountain" style="left:55%"></span>
+        <span class="mountain" style="left:80%;height:235px"></span>
+      </div>
+
+      <div id="hill-layer" class="parallax" aria-hidden="true">
+        <span class="hill" style="left:7%"></span>
+        <span class="hill" style="left:35%;height:143px"></span>
+        <span class="hill" style="left:65%"></span>
+        <span class="hill" style="left:89%;height:135px"></span>
+      </div>
+
+      <div id="scenery-layer" class="parallax" aria-hidden="true">
+        <span class="brick" style="left:7%;top:153px"></span>
+        <span class="brick question-block" style="left:12%;top:153px">?</span>
+        <span class="brick" style="left:17%;top:153px"></span>
+        <span class="coin" style="left:10%;top:115px"></span>
+        <span class="coin" style="left:25%;top:165px"></span>
+        <span class="coin" style="left:39%;top:126px"></span>
+        <span class="coin" style="left:53%;top:152px"></span>
+        <span class="coin" style="left:76%;top:116px"></span>
+        <span class="brick question-block" style="left:47%;top:163px">?</span>
+        <span class="brick" style="left:58%;top:155px"></span>
+        <span class="brick" style="left:62%;top:155px"></span>
+        <span class="pipe" style="left:30%"></span>
+        <span class="pipe" style="left:73%;height:110px"></span>
+        <span class="pipe" style="left:93%;height:74px"></span>
+      </div>
+
+      <div id="track-lane" aria-hidden="true"></div>
+      <div id="ground" aria-hidden="true"></div>
+      <div id="speed-lines" aria-hidden="true"></div>
+      <div class="finish-flag" aria-hidden="true"></div>
+
+      <div id="race-badge">🍄 蘑菇王國賽跑</div>
+
+      <div id="player" aria-label="學生選擇的賽跑角色">
+        <div id="player-sprite" class="player-sprite"></div>
+        <div class="runner-shadow"></div>
+      </div>
+
+      <!-- 題目固定在最上層：清晰、無背景干擾 -->
       <div id="question-box">
-
-        <div
-          class="question-image"
-          id="current-image">
-        </div>
-
-        <div
-          style="
-            font-size:16px;
-            font-weight:bold;
-            margin-top:5px;
-          ">
-
-          請輸入英文字母
-
-        </div>
-
+        <div class="question-caption">⭐ 輔助字形挑戰 ⭐</div>
+        <div class="question-image" id="current-image"></div>
+        <input
+          id="answer-input"
+          type="text"
+          maxlength="8"
+          autocomplete="off"
+          autocapitalize="off"
+          spellcheck="false"
+          aria-label="輸入題目答案"
+          placeholder="A / Ａ"
+        >
+        <div id="answer-feedback" aria-live="off"></div>
+        <div class="typing-help">可輸入全形／半形英文字母</div>
       </div>
 
     </div>
@@ -1066,7 +1639,7 @@
 
 
     const APP_VERSION =
-      "3.3.0";
+      "4.0.0";
 
 
     const TOTAL_QUESTIONS =
@@ -1092,6 +1665,24 @@
 
     let currentStudent =
       null;
+
+    let selectedCharacter =
+      null;
+
+    let answerBuffer =
+      "";
+
+    let isComposingAnswer =
+      false;
+
+    let recentKeyTimes =
+      [];
+
+    let lastFrameTime =
+      0;
+
+    let lastTypingAt =
+      0;
 
 
     let sessionToken =
@@ -1202,7 +1793,251 @@
     // 初始化
     // ==============================================================
 
+
+    // ==============================================================
+    // 四款自主繪製的像素風角色 (SVG)
+    // ==============================================================
+    function characterSprite(type) {
+
+      const outline = "#54301f";
+      const skin = "#ffcf9e";
+
+      if (type === "mario" || type === "luigi") {
+
+        const luigi = type === "luigi";
+        const hat = luigi ? "#2cc65b" : "#eb383a";
+        const clothes = luigi ? "#2cc65b" : "#eb383a";
+        const mark = luigi ? "L" : "M";
+
+        return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 110 132" role="img" aria-label="' + type + '">' +
+          '<path d="M33 98 L44 80 L68 80 L78 98 L80 115 L69 119 L64 107 L55 111 L48 106 L45 120 L28 120 Z" fill="#287ed9" stroke="' + outline + '" stroke-width="4"/>' +
+          '<path d="M28 118 L47 118 L47 126 L18 126 L18 120 Z" fill="#86503b" stroke="' + outline + '" stroke-width="3"/>' +
+          '<path d="M63 116 L82 116 L92 124 L92 128 L63 128 Z" fill="#86503b" stroke="' + outline + '" stroke-width="3"/>' +
+          '<path d="M34 74 L75 74 L82 96 L67 104 L59 88 L48 99 L27 97 Z" fill="' + clothes + '" stroke="' + outline + '" stroke-width="4"/>' +
+          '<path d="M20 81 Q6 94 17 104 Q25 108 35 99 L42 89 Z" fill="' + clothes + '" stroke="' + outline + '" stroke-width="3"/>' +
+          '<path d="M77 82 Q95 90 88 104 Q79 109 68 98 Z" fill="' + clothes + '" stroke="' + outline + '" stroke-width="3"/>' +
+          '<ellipse cx="15" cy="101" rx="11" ry="9" fill="#fff" stroke="' + outline + '" stroke-width="3"/>' +
+          '<ellipse cx="90" cy="101" rx="11" ry="9" fill="#fff" stroke="' + outline + '" stroke-width="3"/>' +
+          '<rect x="39" y="90" width="31" height="17" rx="4" fill="#287ed9" stroke="' + outline + '" stroke-width="3"/>' +
+          '<circle cx="43" cy="93" r="3.4" fill="#ffd849"/><circle cx="66" cy="93" r="3.4" fill="#ffd849"/>' +
+          '<path d="M31 38 Q22 42 24 63 L35 77 L70 77 Q86 63 78 45 Z" fill="' + skin + '" stroke="' + outline + '" stroke-width="4"/>' +
+          '<path d="M28 47 Q21 35 38 29 L70 29 L80 50 Q69 43 66 51 Q51 40 40 53 Z" fill="#623922"/>' +
+          '<ellipse cx="40" cy="53" rx="4" ry="6" fill="#fff"/><ellipse cx="61" cy="53" rx="4" ry="6" fill="#fff"/>' +
+          '<ellipse cx="41" cy="54" rx="2.5" ry="4" fill="#243454"/><ellipse cx="62" cy="54" rx="2.5" ry="4" fill="#243454"/>' +
+          '<ellipse cx="55" cy="64" rx="10" ry="7" fill="#ffac86" stroke="#d7805c" stroke-width="2"/>' +
+          '<path d="M36 70 Q44 61 53 70 Q62 61 73 70 Q66 82 55 76 Q45 82 36 70 Z" fill="#6b3927"/>' +
+          '<path d="M24 36 Q21 7 52 7 Q82 7 83 35 Z" fill="' + hat + '" stroke="' + outline + '" stroke-width="4"/>' +
+          '<rect x="19" y="33" width="69" height="11" rx="5" fill="' + hat + '" stroke="' + outline + '" stroke-width="4"/>' +
+          '<ellipse cx="54" cy="24" rx="14" ry="12" fill="#fff"/>' +
+          '<text x="54" y="32" text-anchor="middle" font-size="19" font-weight="900" font-family="Arial,sans-serif" fill="' + hat + '">' + mark + '</text>' +
+          '</svg>';
+      }
+
+      if (type === "toad") {
+
+        return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 110 132" role="img" aria-label="Toad">' +
+          '<path d="M29 94 L46 88 L66 89 L79 96 L75 120 L61 116 L53 121 L40 116 L28 123 Z" fill="#f9f5e2" stroke="' + outline + '" stroke-width="4"/>' +
+          '<path d="M25 119 L45 118 L44 128 L17 128 Z M65 118 L84 118 L97 128 L67 128 Z" fill="#995334" stroke="' + outline + '" stroke-width="3"/>' +
+          '<path d="M28 80 L41 73 L66 73 L82 82 L73 108 L61 106 L55 87 L47 109 L33 108 Z" fill="#fff4de" stroke="' + outline + '" stroke-width="4"/>' +
+          '<path d="M29 81 L37 79 L45 106 L33 107 Z M73 81 L82 83 L74 106 L64 106 Z" fill="#2d78d1"/>' +
+          '<circle cx="15" cy="96" r="10" fill="#fff" stroke="' + outline + '" stroke-width="3"/><circle cx="91" cy="94" r="10" fill="#fff" stroke="' + outline + '" stroke-width="3"/>' +
+          '<ellipse cx="54" cy="63" rx="29" ry="27" fill="' + skin + '" stroke="' + outline + '" stroke-width="4"/>' +
+          '<ellipse cx="46" cy="61" rx="4" ry="7" fill="#21334c"/><ellipse cx="65" cy="61" rx="4" ry="7" fill="#21334c"/>' +
+          '<path d="M50 75 Q57 83 64 75" fill="none" stroke="#a95f42" stroke-width="3" stroke-linecap="round"/>' +
+          '<ellipse cx="25" cy="63" rx="20" ry="30" fill="#fff" stroke="' + outline + '" stroke-width="3"/>' +
+          '<path d="M8 54 Q5 20 31 13 Q76 -6 101 31 Q111 48 99 59 Q80 43 56 43 Q25 43 8 54 Z" fill="#fff" stroke="' + outline + '" stroke-width="4"/>' +
+          '<ellipse cx="50" cy="21" rx="19" ry="15" fill="#e94b43"/>' +
+          '<ellipse cx="20" cy="40" rx="10" ry="16" fill="#e94b43"/>' +
+          '<ellipse cx="89" cy="39" rx="10" ry="17" fill="#e94b43"/>' +
+          '</svg>';
+      }
+
+      // Peach：皇冠、金色長髮和粉紅色衣裙
+      return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 110 132" role="img" aria-label="Peach">' +
+        '<path d="M34 77 L70 77 L89 116 L89 122 L16 122 L16 116 Z" fill="#f07dbd" stroke="#8e426b" stroke-width="4"/>' +
+        '<path d="M35 93 L64 90 L74 120 L29 120 Z" fill="#ffa4d1"/>' +
+        '<path d="M17 120 L48 120 L46 129 L16 129 Z M63 120 L91 120 L96 129 L64 129 Z" fill="#a74377" stroke="#783b60" stroke-width="3"/>' +
+        '<path d="M27 78 Q15 86 17 101 L27 106 L39 86 Z M77 78 Q94 86 91 104 L80 107 L67 86 Z" fill="#ee79bb" stroke="#8e426b" stroke-width="3"/>' +
+        '<ellipse cx="18" cy="103" rx="10" ry="9" fill="#fff" stroke="#8e426b" stroke-width="3"/>' +
+        '<ellipse cx="90" cy="104" rx="10" ry="9" fill="#fff" stroke="#8e426b" stroke-width="3"/>' +
+        '<path d="M26 32 Q19 23 29 19 L76 19 Q89 23 80 41 L84 88 L72 96 L65 49 L32 51 L33 95 L18 84 Z" fill="#f7b935" stroke="#af742e" stroke-width="3"/>' +
+        '<ellipse cx="54" cy="55" rx="24" ry="28" fill="' + skin + '" stroke="#a86140" stroke-width="3"/>' +
+        '<path d="M30 40 Q35 21 59 24 L74 36 L68 48 L48 40 L30 55 Z" fill="#ffd250"/>' +
+        '<ellipse cx="45" cy="55" rx="3.5" ry="6" fill="#3b83be"/><ellipse cx="63" cy="55" rx="3.5" ry="6" fill="#3b83be"/>' +
+        '<path d="M47 72 Q54 77 62 71" stroke="#c24a66" stroke-width="3" fill="none" stroke-linecap="round"/>' +
+        '<path d="M33 25 L31 9 L42 16 L53 3 L65 16 L78 8 L75 27 Z" fill="#f6c231" stroke="#945f22" stroke-width="3"/>' +
+        '<circle cx="53" cy="18" r="6" fill="#e7478d"/><circle cx="37" cy="21" r="3" fill="#4bb5e6"/><circle cx="70" cy="21" r="3" fill="#4bb5e6"/>' +
+        '</svg>';
+    }
+
+
+    function initializeCharacters() {
+      for (const type of ["mario", "luigi", "toad", "peach"]) {
+        document.getElementById("avatar-" + type).innerHTML =
+          characterSprite(type);
+      }
+    }
+
+
+    function chooseCharacter(type) {
+
+      if (!["mario", "luigi", "toad", "peach"].includes(type)) {
+        return;
+      }
+
+      selectedCharacter = type;
+
+      document.querySelectorAll(".character-card").forEach(card => {
+        const selected = card.dataset.character === type;
+        card.classList.toggle("selected", selected);
+        card.setAttribute("aria-pressed", selected ? "true" : "false");
+      });
+
+      document.getElementById("player-sprite").innerHTML =
+        characterSprite(type);
+
+      const start = document.getElementById("start-button");
+      start.disabled = false;
+      start.textContent = "🏁 開始賽跑測驗";
+    }
+
+
+    // ==============================================================
+    // 輸入：兼容全形與半形英文字母
+    // ==============================================================
+    function normalizeTypedLetter(value) {
+      const normalized = String(value || "").normalize("NFKC").toLowerCase();
+      return /^[a-z]$/.test(normalized) ? normalized : "";
+    }
+
+
+    function readAnswerInput() {
+      const input = document.getElementById("answer-input");
+      const raw = input.value;
+      if (!raw) return;
+      input.value = "";
+
+      // 一次只計一個字母，防止貼上一整串直接完成測驗。
+      const letter = normalizeTypedLetter(raw);
+      if (letter && isPlaying) {
+        submitLetter(letter);
+      }
+    }
+
+
+    function setupAnswerInput() {
+      const input = document.getElementById("answer-input");
+
+      input.addEventListener("compositionstart", () => {
+        isComposingAnswer = true;
+      });
+
+      input.addEventListener("compositionend", () => {
+        isComposingAnswer = false;
+        // 有些輸入法會於 compositionend 之後才觸發最後的 input。
+        setTimeout(readAnswerInput, 0);
+      });
+
+      input.addEventListener("input", event => {
+        if (isComposingAnswer || event.isComposing) return;
+
+        if (event.inputType === "insertFromPaste" ||
+            event.inputType === "insertFromDrop") {
+          input.value = "";
+          return;
+        }
+
+        readAnswerInput();
+      });
+
+      window.addEventListener("keydown", event => {
+        if (!isPlaying || event.isComposing ||
+            event.ctrlKey || event.metaKey || event.altKey) {
+          return;
+        }
+
+        if (event.target === input ||
+            (event.target && /^(INPUT|SELECT|TEXTAREA)$/.test(event.target.tagName))) {
+          return;
+        }
+
+        const letter = normalizeTypedLetter(event.key);
+        if (!letter) return;
+        event.preventDefault();
+        submitLetter(letter);
+      });
+    }
+
+
+    function submitLetter(letter) {
+      if (!isPlaying || questionsAttempted >= TOTAL_QUESTIONS) return;
+
+      const question = questionSequence[questionsAttempted];
+      if (!question) return;
+
+      const now = performance.now();
+      recentKeyTimes.push(now);
+      lastTypingAt = now;
+      recentKeyTimes = recentKeyTimes.filter(t => now - t < 4400);
+
+      answerBuffer += letter;
+
+      // 可支援題庫內答案為多個英文字母的圖片。
+      const isPrefix = question.answer.startsWith(answerBuffer);
+      const isComplete = answerBuffer === question.answer;
+
+      if (isPrefix && !isComplete) {
+        document.getElementById("answer-feedback").textContent =
+          "已輸入：" + answerBuffer.toUpperCase();
+        return;
+      }
+
+      questionsAttempted++;
+
+      if (isComplete) {
+        correctAnswers++;
+        currentSpeed = Math.min(34, currentSpeed + 2.5);
+        document.getElementById("answer-feedback").textContent = "✅ 正確！";
+      } else {
+        mistakes++;
+        currentSpeed = Math.max(0, currentSpeed * .72);
+        wrongAnswers.push({
+          attemptNumber: questionsAttempted,
+          imgSrc: question.imgSrc,
+          categoryLabel: question.categoryLabel,
+          userAnswer: answerBuffer,
+          correctAnswer: question.answer
+        });
+        document.getElementById("question-box").style.borderColor = "#ed4d45";
+        setTimeout(() => {
+          document.getElementById("question-box").style.borderColor = "#ffcd31";
+        }, 180);
+      }
+
+      answerBuffer = "";
+      updateHUD();
+
+      const progress = questionsAttempted / TOTAL_QUESTIONS;
+      document.getElementById("player").style.left = (7 + progress * 63) + "%";
+      document.getElementById("race-progress-fill").style.width =
+        Math.round(progress * 100) + "%";
+
+      if (questionsAttempted >= TOTAL_QUESTIONS) {
+        endGame(true);
+      } else {
+        showNextQuestion();
+      }
+
+      const input = document.getElementById("answer-input");
+      if (document.activeElement !== input && isPlaying) {
+        input.focus({preventScroll:true});
+      }
+    }
+
     async function initSystem() {
+
+      initializeCharacters();
+      setupAnswerInput();
 
       if (
 
@@ -2112,9 +2947,14 @@
             );
 
 
+          const normalizedName =
+
+            nameWithoutExt.normalize("NFKC");
+
+
           const answerMatch =
 
-            nameWithoutExt.match(
+            normalizedName.match(
               /^[a-zA-Z]+/
             );
 
@@ -2229,6 +3069,11 @@
 
 
     async function prepareGame() {
+
+      if (!selectedCharacter) {
+        alert("請先選擇 Mario、Luigi、Toad 或 Peach 其中一個角色。");
+        return;
+      }
 
       if (
         !currentStudent ||
@@ -2786,36 +3631,27 @@
       isPlaying =
         true;
 
+      recentKeyTimes = [];
+      lastTypingAt = 0;
+      lastFrameTime = 0;
+      answerBuffer = "";
+      bgOffset = 0;
 
+      showPanel("game-panel");
 
-      showPanel(
-        "game-panel"
-      );
-
-
-      document.getElementById(
-        "player"
-      ).style.left =
-        "50px";
-
-
-      document.getElementById(
-        "player"
-      ).style.bottom =
-        "50px";
-
-
-      document.getElementById(
-        "question-box"
-      ).style.borderColor =
-        "#333";
-
+      document.getElementById("player").style.left = "7%";
+      document.getElementById("player").classList.remove("running");
+      document.getElementById("game-container").classList.remove("speed-fast");
+      document.getElementById("race-progress-fill").style.width = "0%";
+      document.getElementById("answer-input").value = "";
+      document.getElementById("question-box").style.borderColor = "#ffcd31";
 
       updateHUD();
 
 
       showNextQuestion();
 
+      document.getElementById("answer-input").focus({preventScroll:true});
 
       requestAnimationFrame(
         gameLoop
@@ -2861,306 +3697,82 @@
 
     function showNextQuestion() {
 
-      const nextQuestion =
+      const nextQuestion = questionSequence[questionsAttempted];
+      if (!nextQuestion) return;
 
-        questionSequence[
-          questionsAttempted
-        ];
+      answerBuffer = "";
+      const input = document.getElementById("answer-input");
+      input.value = "";
+      document.getElementById("answer-feedback").textContent = "";
 
-
-      if (
-        !nextQuestion
-      ) {
-
-        return;
-      }
-
-
-      document.getElementById(
-        "current-image"
-      ).innerHTML =
-
-        `<img src="${
-          nextQuestion.imgSrc
-        }" alt="題目圖片">`;
-
+      // 題目圖片在固定卡片顯示，不參與任何跑步或背景動畫。
+      document.getElementById("current-image").innerHTML =
+        '<img src="' + nextQuestion.imgSrc + '" alt="輔助字形題目圖片">';
     }
 
 
-    window.addEventListener(
+    function gameLoop(timestamp) {
 
-      "keydown",
+      if (!isPlaying) return;
 
-      event => {
+      const delta = lastFrameTime
+        ? Math.min(.06, (timestamp - lastFrameTime) / 1000)
+        : .016;
 
-        if (
-          !isPlaying
-        ) {
+      lastFrameTime = timestamp;
 
-          return;
+      // 最近 4.4 秒按鍵數 + 停頓時間，反映真實打字節奏。
+      recentKeyTimes = recentKeyTimes.filter(t => timestamp - t < 4400);
 
-        }
-
-
-        const userInput =
-
-          event.key
-            .toLowerCase();
-
-
-        if (
-
-          !/^[a-z]$/.test(
-            userInput
-          )
-
-        ) {
-
-          return;
-
-        }
-
-
-        const currentQuestion =
-
-          questionSequence[
-            questionsAttempted
-          ];
-
-
-        const correctAnswer =
-
-          currentQuestion.answer;
-
-
-        questionsAttempted++;
-
-
-        // =============================
-        // 答對
-        // =============================
-
-        if (
-
-          userInput ===
-          correctAnswer
-
-        ) {
-
-          correctAnswers++;
-
-
-          currentSpeed =
-
-            Math.min(
-
-              40,
-
-              currentSpeed +
-              12
-
-            );
-
-
-          document.getElementById(
-            "player"
-          ).style.left =
-
-            (
-
-              50
-
-              +
-
-              (
-
-                correctAnswers
-
-                /
-
-                TOTAL_QUESTIONS
-
-              )
-
-              *
-
-              650
-
-            )
-
-            +
-
-            "px";
-
-
-          document.getElementById(
-            "player"
-          ).style.bottom =
-            "90px";
-
-
-          setTimeout(
-
-            () => {
-
-              document.getElementById(
-                "player"
-              ).style.bottom =
-                "50px";
-
-            },
-
-            150
-
-          );
-
-        }
-
-        // =============================
-        // 答錯
-        // =============================
-
-        else {
-
-          mistakes++;
-
-
-          wrongAnswers.push({
-
-            attemptNumber:
-              questionsAttempted,
-
-            imgSrc:
-              currentQuestion.imgSrc,
-
-            categoryLabel:
-              currentQuestion.categoryLabel,
-
-            userAnswer:
-              userInput,
-
-            correctAnswer:
-              correctAnswer
-
-          });
-
-
-          currentSpeed =
-
-            Math.max(
-
-              0,
-
-              currentSpeed -
-              10
-
-            );
-
-
-          document.getElementById(
-            "question-box"
-          ).style.borderColor =
-            "red";
-
-
-          setTimeout(
-
-            () => {
-
-              document.getElementById(
-                "question-box"
-              ).style.borderColor =
-                "#333";
-
-            },
-
-            200
-
-          );
-
-        }
-
-
-        updateHUD();
-
-
-        if (
-
-          questionsAttempted >=
-          TOTAL_QUESTIONS
-
-        ) {
-
-          endGame(
-            true
-          );
-
-        }
-
-        else {
-
-          showNextQuestion();
-
-        }
-
-      }
-
-    );
-
-
-    function gameLoop() {
-
-      if (
-        !isPlaying
-      ) {
-
-        return;
-
-      }
-
-
-      currentSpeed *=
-        0.95;
-
-
-      bgOffset -=
-        currentSpeed;
-
-
-      if (
-        bgOffset <=
-        -800
-      ) {
-
-        bgOffset =
-          0;
-
-      }
-
-
-      document.getElementById(
-        "background"
-      ).style.transform =
-
-        `translateX(${bgOffset}px)`;
-
-
-      document.getElementById(
-        "speed-display"
-      ).textContent =
-
-        Math.floor(
-
-          currentSpeed *
-          3
-
-        );
-
-
-      requestAnimationFrame(
-        gameLoop
+      const sinceLast = lastTypingAt ? (timestamp - lastTypingAt) / 1000 : 999;
+      const oldest = recentKeyTimes.length ? recentKeyTimes[0] : timestamp;
+      const sampleSeconds = Math.min(
+        4.4,
+        Math.max(1.2, (timestamp - oldest) / 1000)
       );
 
+      const lettersPerSec = recentKeyTimes.length / sampleSeconds;
+      const slowdown = Math.exp(-Math.max(0, sinceLast - .55) * 1.4);
+      const effectiveSpeed = lettersPerSec * slowdown;
+      const targetSpeed = Math.min(34, effectiveSpeed * 9.5);
+
+      currentSpeed += (targetSpeed - currentSpeed) * Math.min(1, delta * 5);
+
+      const stage = document.getElementById("game-container");
+      const player = document.getElementById("player");
+      const moving = currentSpeed > 1.4;
+
+      player.classList.toggle("running", moving);
+      stage.classList.toggle("speed-fast", currentSpeed > 17);
+
+      // 字母輸入頻率越高，人物步頻越快。
+      player.style.setProperty(
+        "--run-duration",
+        (0.75 - Math.min(34, currentSpeed) / 34 * .55).toFixed(2) + "s"
+      );
+
+      // 字母輸入頻率越高，背景向左移動越快，形成奔跑感。
+      bgOffset = (bgOffset + currentSpeed * delta * 23) % 1450;
+
+      document.getElementById("cloud-layer").style.transform =
+        "translateX(" + (-bgOffset * .12) + "px)";
+      document.getElementById("mountain-layer").style.transform =
+        "translateX(" + (-bgOffset * .23) + "px)";
+      document.getElementById("hill-layer").style.transform =
+        "translateX(" + (-bgOffset * .42) + "px)";
+      document.getElementById("scenery-layer").style.transform =
+        "translateX(" + (-bgOffset * .85) + "px)";
+
+      document.getElementById("ground").style.backgroundPositionX =
+        (-bgOffset * 1.3) + "px";
+
+      document.getElementById("speed-display").textContent =
+        Math.round(currentSpeed * 3.6);
+
+      document.getElementById("typing-rate").textContent =
+        effectiveSpeed.toFixed(1);
+
+      requestAnimationFrame(gameLoop);
     }
 
 
@@ -3320,6 +3932,8 @@
       isPlaying =
         false;
 
+      document.getElementById("player").classList.remove("running");
+      document.getElementById("game-container").classList.remove("speed-fast");
 
       clearInterval(
         timerInterval
