@@ -121,6 +121,58 @@
       min-width: 72px;
     }
 
+    .category-options {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(130px, 1fr));
+      gap: 10px;
+      width: 84%;
+      margin: 10px auto 4px;
+    }
+
+    .category-option {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 8px;
+      padding: 11px 13px;
+      border: 2px solid #bbdefb;
+      border-radius: 10px;
+      background: #f7fbff;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 700;
+      text-align: left;
+    }
+
+    .category-option:hover {
+      background: #e3f2fd;
+    }
+
+    .category-option input {
+      width: auto;
+      margin: 0;
+      transform: scale(1.2);
+    }
+
+    .category-help {
+      width: 84%;
+      margin: 6px auto 0;
+      color: #607d8b;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .wrong-category {
+      display: inline-block;
+      margin-bottom: 8px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: #e3f2fd;
+      color: #1565c0;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
     #gas-response-frame {
       display: none;
       width: 0;
@@ -551,29 +603,50 @@
 
       <br>
 
-      <select id="category-select">
+      <div class="category-options">
 
-        <option value="cat1">
+        <label class="category-option">
+          <input
+            type="checkbox"
+            name="practice-category"
+            value="cat1"
+            data-label="哲理類"
+            checked>
           哲理類
-        </option>
+        </label>
 
-        <option value="cat2">
+        <label class="category-option">
+          <input
+            type="checkbox"
+            name="practice-category"
+            value="cat2"
+            data-label="筆劃類">
           筆劃類
-        </option>
+        </label>
 
-        <option value="cat3">
+        <label class="category-option">
+          <input
+            type="checkbox"
+            name="practice-category"
+            value="cat3"
+            data-label="人身類">
           人身類
-        </option>
+        </label>
 
-        <option value="cat4">
+        <label class="category-option">
+          <input
+            type="checkbox"
+            name="practice-category"
+            value="cat4"
+            data-label="字形類">
           字形類
-        </option>
+        </label>
 
-        <option value="all">
-          🌟 所有輔助字形（綜合）
-        </option>
+      </div>
 
-      </select>
+      <div class="category-help">
+        可同時選擇多個類別，例如「哲理類＋人身類」。至少選擇一個類別。
+      </div>
 
     </div>
 
@@ -642,6 +715,10 @@
       <br>
 
       5. 測驗完成後會顯示答錯題目、你的答案及正確答案。
+
+      <br>
+
+      6. 100題會按所選題庫公平輪替：每個字先完整出現一輪，才開始下一輪；最後不足一輪的題數才隨機抽取，且同一輪不重複。
 
     </div>
 
@@ -989,7 +1066,7 @@
 
 
     const APP_VERSION =
-      "3.2.0";
+      "3.3.0";
 
 
     const TOTAL_QUESTIONS =
@@ -1005,6 +1082,11 @@
     // ==============================================================
 
     let questionBank =
+      [];
+
+
+    // 預先排好的100題公平出題序列
+    let questionSequence =
       [];
 
 
@@ -1927,7 +2009,9 @@
     // ==============================================================
 
     async function loadZipData(
-      zipFileName
+      zipFileName,
+      categoryKey,
+      categoryLabel
     ) {
 
       const zipRes =
@@ -2098,6 +2182,18 @@
 
                   questionBank.push({
 
+                    id:
+                      categoryKey + ":" + filename,
+
+                    categoryKey:
+                      categoryKey,
+
+                    categoryLabel:
+                      categoryLabel,
+
+                    sourceName:
+                      shortName,
+
                     answer:
 
                       answerMatch[0]
@@ -2135,47 +2231,74 @@
     async function prepareGame() {
 
       if (
-
         !currentStudent ||
-
         !sessionToken
-
       ) {
 
         alert(
           "登入狀態已失效，請重新登入。"
         );
 
-
         location.reload();
-
         return;
-
       }
 
 
-      const catSelect =
+      const selectedInputs =
 
-        document.getElementById(
-          "category-select"
+        Array.from(
+
+          document.querySelectorAll(
+            'input[name="practice-category"]:checked'
+          )
+
         );
 
 
-      const catValue =
-        catSelect.value;
+      if (
+        selectedInputs.length ===
+        0
+      ) {
+
+        alert(
+          "請至少選擇一個練習類別。"
+        );
+
+        return;
+      }
+
+
+      const selectedCategories =
+
+        selectedInputs.map(
+
+          input => ({
+
+            key:
+              input.value,
+
+            label:
+              input.dataset.label
+
+          })
+
+        );
 
 
       currentCategoryText =
 
-        catSelect.options[
-          catSelect.selectedIndex
-        ].text;
+        selectedCategories
+
+          .map(
+            item => item.label
+          )
+
+          .join("＋");
 
 
       document.getElementById(
         "current-cat-name"
       ).textContent =
-
         currentCategoryText;
 
 
@@ -2200,63 +2323,72 @@
       document.getElementById(
         "loading-detail"
       ).textContent =
-        "";
+
+        "正在建立公平的100題出題次序…";
 
 
       questionBank =
         [];
 
 
+      questionSequence =
+        [];
+
+
       try {
 
+        await Promise.all(
+
+          selectedCategories.map(
+
+            category =>
+
+              loadZipData(
+
+                category.key +
+                ".zip",
+
+                category.key,
+
+                category.label
+
+              )
+
+          )
+
+        );
+
+
         if (
-          catValue ===
-          "all"
+          questionBank.length ===
+          0
         ) {
 
-          await Promise.all([
-
-            loadZipData(
-              "cat1.zip"
-            ),
-
-            loadZipData(
-              "cat2.zip"
-            ),
-
-            loadZipData(
-              "cat3.zip"
-            ),
-
-            loadZipData(
-              "cat4.zip"
-            )
-
-          ]);
-
-        }
-
-        else {
-
-          await loadZipData(
-
-            catValue +
-            ".zip"
-
+          throw new Error(
+            "所選題庫內沒有可用圖片"
           );
 
         }
 
 
+        questionSequence =
+
+          buildFairQuestionSequence(
+
+            questionBank,
+
+            TOTAL_QUESTIONS
+
+          );
+
+
         if (
-
-          questionBank.length ===
-          0
-
+          questionSequence.length !==
+          TOTAL_QUESTIONS
         ) {
 
           throw new Error(
-            "題庫內沒有可用圖片"
+            "未能建立完整的100題練習"
           );
 
         }
@@ -2288,6 +2420,237 @@
         );
 
       }
+
+    }
+
+
+    // ==============================================================
+    // 公平出題
+    // ==============================================================
+
+    function shuffleArray(
+      items
+    ) {
+
+      const arr =
+        [...items];
+
+
+      for (
+        let i =
+          arr.length - 1;
+
+        i >
+          0;
+
+        i--
+      ) {
+
+        const j =
+
+          Math.floor(
+
+            Math.random() *
+            (i + 1)
+
+          );
+
+
+        [
+          arr[i],
+          arr[j]
+        ] = [
+          arr[j],
+          arr[i]
+        ];
+
+      }
+
+
+      return arr;
+
+    }
+
+
+    function avoidBoundaryRepeat(
+      sequence,
+      round
+    ) {
+
+      if (
+        sequence.length ===
+        0
+        ||
+        round.length <=
+        1
+      ) {
+
+        return round;
+      }
+
+
+      const previousId =
+
+        sequence[
+          sequence.length - 1
+        ].id;
+
+
+      if (
+        round[0].id !==
+        previousId
+      ) {
+
+        return round;
+      }
+
+
+      const swapIndex =
+
+        round.findIndex(
+
+          (item, index) =>
+
+            index >
+              0
+
+            &&
+
+            item.id !==
+              previousId
+
+        );
+
+
+      if (
+        swapIndex >
+        0
+      ) {
+
+        [
+          round[0],
+          round[swapIndex]
+        ] = [
+          round[swapIndex],
+          round[0]
+        ];
+
+      }
+
+
+      return round;
+
+    }
+
+
+    function buildFairQuestionSequence(
+      bank,
+      totalQuestions
+    ) {
+
+      const sequence =
+        [];
+
+
+      const uniqueCount =
+        bank.length;
+
+
+      if (
+        uniqueCount ===
+        0
+      ) {
+
+        return sequence;
+      }
+
+
+      const fullRounds =
+
+        Math.floor(
+
+          totalQuestions /
+          uniqueCount
+
+        );
+
+
+      const remainder =
+
+        totalQuestions %
+        uniqueCount;
+
+
+      // 每一個完整輪次：
+      // 所有字各出現一次，同輪不重複。
+      for (
+        let roundNo =
+          0;
+
+        roundNo <
+          fullRounds;
+
+        roundNo++
+      ) {
+
+        let round =
+
+          shuffleArray(
+            bank
+          );
+
+
+        round =
+
+          avoidBoundaryRepeat(
+            sequence,
+            round
+          );
+
+
+        sequence.push(
+          ...round
+        );
+
+      }
+
+
+      // 最後不足一輪：
+      // 從整個題庫隨機抽取所需數量，
+      // 同一個字在這個餘數輪不會重複。
+      if (
+        remainder >
+        0
+      ) {
+
+        let finalRound =
+
+          shuffleArray(
+            bank
+          );
+
+
+        finalRound =
+
+          avoidBoundaryRepeat(
+            sequence,
+            finalRound
+          );
+
+
+        sequence.push(
+
+          ...finalRound.slice(
+            0,
+            remainder
+          )
+
+        );
+
+      }
+
+
+      return sequence;
 
     }
 
@@ -2424,14 +2787,6 @@
         true;
 
 
-      questionBank.sort(
-
-        () =>
-          Math.random() -
-          0.5
-
-      );
-
 
       showPanel(
         "game-panel"
@@ -2506,17 +2861,19 @@
 
     function showNextQuestion() {
 
-      currentQuestionIndex =
+      const nextQuestion =
 
-        Math.floor(
+        questionSequence[
+          questionsAttempted
+        ];
 
-          Math.random()
 
-          *
+      if (
+        !nextQuestion
+      ) {
 
-          questionBank.length
-
-        );
+        return;
+      }
 
 
       document.getElementById(
@@ -2524,9 +2881,7 @@
       ).innerHTML =
 
         `<img src="${
-          questionBank[
-            currentQuestionIndex
-          ].imgSrc
+          nextQuestion.imgSrc
         }" alt="題目圖片">`;
 
     }
@@ -2568,8 +2923,8 @@
 
         const currentQuestion =
 
-          questionBank[
-            currentQuestionIndex
+          questionSequence[
+            questionsAttempted
           ];
 
 
@@ -2677,6 +3032,9 @@
 
             imgSrc:
               currentQuestion.imgSrc,
+
+            categoryLabel:
+              currentQuestion.categoryLabel,
 
             userAnswer:
               userInput,
@@ -2879,6 +3237,15 @@
                 <div class="wrong-title">
 
                   第 ${item.attemptNumber} 題
+
+                </div>
+
+
+                <div class="wrong-category">
+
+                  ${escapeHtml(
+                    item.categoryLabel
+                  )}
 
                 </div>
 
