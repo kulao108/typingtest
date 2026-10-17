@@ -249,11 +249,24 @@
       width: 80px;
     }
 
-    .character-avatar svg {
+    .character-avatar img {
       display: block;
-      width: 76px;
-      height: 82px;
+      width: auto;
+      max-width: 76px;
+      max-height: 82px;
+      height: auto;
+      object-fit: contain;
       filter: drop-shadow(0 4px 0 #0002);
+    }
+
+    .character-avatar.missing-image::after {
+      content: "尚未上傳圖片";
+      display: block;
+      font-size: 11px;
+      color: #c62828;
+      font-weight: 800;
+      line-height: 1.4;
+      text-align: center;
     }
 
     .character-picked {
@@ -562,15 +575,30 @@
       transform-origin: 50% 96%;
     }
 
-    .player-sprite svg {
+    .player-sprite img {
       display: block;
-      width: 100%;
       height: 100%;
+      width: 100%;
+      object-fit: contain;
+      object-position: center bottom;
       filter: drop-shadow(0 6px 0 #143d4e54);
+      transform-origin: 50% 92%;
+      /* 原圖是正面照；用透視與傾斜模擬側跑，保留原圖人物 */
+      transform: perspective(480px) rotateY(-32deg) rotateZ(-4deg);
     }
 
     #player.running .player-sprite {
       animation: spriteSprint var(--run-duration, .45s) ease-in-out infinite alternate;
+    }
+
+    #player.running .player-sprite img {
+      animation: runnerLean var(--run-duration, .45s) ease-in-out infinite alternate;
+    }
+
+    #player.running.fast .player-sprite img {
+      filter:
+        drop-shadow(0 6px 0 #143d4e54)
+        drop-shadow(-9px 4px 0 rgba(255,255,255,.32));
     }
 
     .runner-shadow {
@@ -712,8 +740,17 @@
     }
 
     @keyframes spriteSprint {
-      from { transform: translateY(0) rotate(-4deg) scaleX(.98); }
-      to { transform: translateY(-11px) rotate(4deg) scaleX(1.02); }
+      from { transform: translateY(0) rotate(-3deg) scaleX(.98); }
+      to { transform: translateY(-11px) rotate(3deg) scaleX(1.02); }
+    }
+
+    @keyframes runnerLean {
+      from {
+        transform: perspective(480px) rotateY(-35deg) rotateZ(-10deg) skewY(1deg);
+      }
+      to {
+        transform: perspective(480px) rotateY(-29deg) rotateZ(3deg) skewY(-2deg);
+      }
     }
 
     @keyframes speedSweep {
@@ -723,6 +760,7 @@
 
     @media (prefers-reduced-motion: reduce) {
       #player.running .player-sprite,
+      #player.running .player-sprite img,
       #game-container.speed-fast #speed-lines,
       .coin {
         animation: none !important;
@@ -1639,7 +1677,7 @@
 
 
     const APP_VERSION =
-      "4.0.0";
+      "4.1.0";
 
 
     const TOTAL_QUESTIONS =
@@ -1795,95 +1833,60 @@
 
 
     // ==============================================================
-    // 四款自主繪製的像素風角色 (SVG)
+    // 四張使用者提供的原始PNG圖片，不使用任何自行繪製的替代角色。
+    // 必須將PNG上傳至GitHub repo根目錄，與index.html同層。
     // ==============================================================
-    function characterSprite(type) {
+    const CHARACTER_ASSETS = Object.freeze({
+      mario: "瑪利歐.png",
+      luigi: "路易吉.png",
+      toad: "奇諾比奧.png",
+      peach: "碧琪.png"
+    });
 
-      const outline = "#54301f";
-      const skin = "#ffcf9e";
+    const CHARACTER_NAMES = Object.freeze({
+      mario: "Mario",
+      luigi: "Luigi",
+      toad: "Toad",
+      peach: "Peach"
+    });
 
-      if (type === "mario" || type === "luigi") {
-
-        const luigi = type === "luigi";
-        const hat = luigi ? "#2cc65b" : "#eb383a";
-        const clothes = luigi ? "#2cc65b" : "#eb383a";
-        const mark = luigi ? "L" : "M";
-
-        return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 110 132" role="img" aria-label="' + type + '">' +
-          '<path d="M33 98 L44 80 L68 80 L78 98 L80 115 L69 119 L64 107 L55 111 L48 106 L45 120 L28 120 Z" fill="#287ed9" stroke="' + outline + '" stroke-width="4"/>' +
-          '<path d="M28 118 L47 118 L47 126 L18 126 L18 120 Z" fill="#86503b" stroke="' + outline + '" stroke-width="3"/>' +
-          '<path d="M63 116 L82 116 L92 124 L92 128 L63 128 Z" fill="#86503b" stroke="' + outline + '" stroke-width="3"/>' +
-          '<path d="M34 74 L75 74 L82 96 L67 104 L59 88 L48 99 L27 97 Z" fill="' + clothes + '" stroke="' + outline + '" stroke-width="4"/>' +
-          '<path d="M20 81 Q6 94 17 104 Q25 108 35 99 L42 89 Z" fill="' + clothes + '" stroke="' + outline + '" stroke-width="3"/>' +
-          '<path d="M77 82 Q95 90 88 104 Q79 109 68 98 Z" fill="' + clothes + '" stroke="' + outline + '" stroke-width="3"/>' +
-          '<ellipse cx="15" cy="101" rx="11" ry="9" fill="#fff" stroke="' + outline + '" stroke-width="3"/>' +
-          '<ellipse cx="90" cy="101" rx="11" ry="9" fill="#fff" stroke="' + outline + '" stroke-width="3"/>' +
-          '<rect x="39" y="90" width="31" height="17" rx="4" fill="#287ed9" stroke="' + outline + '" stroke-width="3"/>' +
-          '<circle cx="43" cy="93" r="3.4" fill="#ffd849"/><circle cx="66" cy="93" r="3.4" fill="#ffd849"/>' +
-          '<path d="M31 38 Q22 42 24 63 L35 77 L70 77 Q86 63 78 45 Z" fill="' + skin + '" stroke="' + outline + '" stroke-width="4"/>' +
-          '<path d="M28 47 Q21 35 38 29 L70 29 L80 50 Q69 43 66 51 Q51 40 40 53 Z" fill="#623922"/>' +
-          '<ellipse cx="40" cy="53" rx="4" ry="6" fill="#fff"/><ellipse cx="61" cy="53" rx="4" ry="6" fill="#fff"/>' +
-          '<ellipse cx="41" cy="54" rx="2.5" ry="4" fill="#243454"/><ellipse cx="62" cy="54" rx="2.5" ry="4" fill="#243454"/>' +
-          '<ellipse cx="55" cy="64" rx="10" ry="7" fill="#ffac86" stroke="#d7805c" stroke-width="2"/>' +
-          '<path d="M36 70 Q44 61 53 70 Q62 61 73 70 Q66 82 55 76 Q45 82 36 70 Z" fill="#6b3927"/>' +
-          '<path d="M24 36 Q21 7 52 7 Q82 7 83 35 Z" fill="' + hat + '" stroke="' + outline + '" stroke-width="4"/>' +
-          '<rect x="19" y="33" width="69" height="11" rx="5" fill="' + hat + '" stroke="' + outline + '" stroke-width="4"/>' +
-          '<ellipse cx="54" cy="24" rx="14" ry="12" fill="#fff"/>' +
-          '<text x="54" y="32" text-anchor="middle" font-size="19" font-weight="900" font-family="Arial,sans-serif" fill="' + hat + '">' + mark + '</text>' +
-          '</svg>';
-      }
-
-      if (type === "toad") {
-
-        return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 110 132" role="img" aria-label="Toad">' +
-          '<path d="M29 94 L46 88 L66 89 L79 96 L75 120 L61 116 L53 121 L40 116 L28 123 Z" fill="#f9f5e2" stroke="' + outline + '" stroke-width="4"/>' +
-          '<path d="M25 119 L45 118 L44 128 L17 128 Z M65 118 L84 118 L97 128 L67 128 Z" fill="#995334" stroke="' + outline + '" stroke-width="3"/>' +
-          '<path d="M28 80 L41 73 L66 73 L82 82 L73 108 L61 106 L55 87 L47 109 L33 108 Z" fill="#fff4de" stroke="' + outline + '" stroke-width="4"/>' +
-          '<path d="M29 81 L37 79 L45 106 L33 107 Z M73 81 L82 83 L74 106 L64 106 Z" fill="#2d78d1"/>' +
-          '<circle cx="15" cy="96" r="10" fill="#fff" stroke="' + outline + '" stroke-width="3"/><circle cx="91" cy="94" r="10" fill="#fff" stroke="' + outline + '" stroke-width="3"/>' +
-          '<ellipse cx="54" cy="63" rx="29" ry="27" fill="' + skin + '" stroke="' + outline + '" stroke-width="4"/>' +
-          '<ellipse cx="46" cy="61" rx="4" ry="7" fill="#21334c"/><ellipse cx="65" cy="61" rx="4" ry="7" fill="#21334c"/>' +
-          '<path d="M50 75 Q57 83 64 75" fill="none" stroke="#a95f42" stroke-width="3" stroke-linecap="round"/>' +
-          '<ellipse cx="25" cy="63" rx="20" ry="30" fill="#fff" stroke="' + outline + '" stroke-width="3"/>' +
-          '<path d="M8 54 Q5 20 31 13 Q76 -6 101 31 Q111 48 99 59 Q80 43 56 43 Q25 43 8 54 Z" fill="#fff" stroke="' + outline + '" stroke-width="4"/>' +
-          '<ellipse cx="50" cy="21" rx="19" ry="15" fill="#e94b43"/>' +
-          '<ellipse cx="20" cy="40" rx="10" ry="16" fill="#e94b43"/>' +
-          '<ellipse cx="89" cy="39" rx="10" ry="17" fill="#e94b43"/>' +
-          '</svg>';
-      }
-
-      // Peach：皇冠、金色長髮和粉紅色衣裙
-      return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 110 132" role="img" aria-label="Peach">' +
-        '<path d="M34 77 L70 77 L89 116 L89 122 L16 122 L16 116 Z" fill="#f07dbd" stroke="#8e426b" stroke-width="4"/>' +
-        '<path d="M35 93 L64 90 L74 120 L29 120 Z" fill="#ffa4d1"/>' +
-        '<path d="M17 120 L48 120 L46 129 L16 129 Z M63 120 L91 120 L96 129 L64 129 Z" fill="#a74377" stroke="#783b60" stroke-width="3"/>' +
-        '<path d="M27 78 Q15 86 17 101 L27 106 L39 86 Z M77 78 Q94 86 91 104 L80 107 L67 86 Z" fill="#ee79bb" stroke="#8e426b" stroke-width="3"/>' +
-        '<ellipse cx="18" cy="103" rx="10" ry="9" fill="#fff" stroke="#8e426b" stroke-width="3"/>' +
-        '<ellipse cx="90" cy="104" rx="10" ry="9" fill="#fff" stroke="#8e426b" stroke-width="3"/>' +
-        '<path d="M26 32 Q19 23 29 19 L76 19 Q89 23 80 41 L84 88 L72 96 L65 49 L32 51 L33 95 L18 84 Z" fill="#f7b935" stroke="#af742e" stroke-width="3"/>' +
-        '<ellipse cx="54" cy="55" rx="24" ry="28" fill="' + skin + '" stroke="#a86140" stroke-width="3"/>' +
-        '<path d="M30 40 Q35 21 59 24 L74 36 L68 48 L48 40 L30 55 Z" fill="#ffd250"/>' +
-        '<ellipse cx="45" cy="55" rx="3.5" ry="6" fill="#3b83be"/><ellipse cx="63" cy="55" rx="3.5" ry="6" fill="#3b83be"/>' +
-        '<path d="M47 72 Q54 77 62 71" stroke="#c24a66" stroke-width="3" fill="none" stroke-linecap="round"/>' +
-        '<path d="M33 25 L31 9 L42 16 L53 3 L65 16 L78 8 L75 27 Z" fill="#f6c231" stroke="#945f22" stroke-width="3"/>' +
-        '<circle cx="53" cy="18" r="6" fill="#e7478d"/><circle cx="37" cy="21" r="3" fill="#4bb5e6"/><circle cx="70" cy="21" r="3" fill="#4bb5e6"/>' +
-        '</svg>';
+    function getCharacterImageUrl(type) {
+      const name = CHARACTER_ASSETS[type];
+      if (!name) return "";
+      return "./" + encodeURIComponent(name);
     }
 
+    function characterSprite(type) {
+      const src = getCharacterImageUrl(type);
+      if (!src) return "";
+      return '<img alt="' + CHARACTER_NAMES[type] +
+        '" src="' + src + '" draggable="false" loading="eager">';
+    }
 
     function initializeCharacters() {
-      for (const type of ["mario", "luigi", "toad", "peach"]) {
-        document.getElementById("avatar-" + type).innerHTML =
-          characterSprite(type);
-      }
+      ["mario", "luigi", "toad", "peach"].forEach(type => {
+        const box = document.getElementById("avatar-" + type);
+        if (!box) return;
+        box.innerHTML = characterSprite(type);
+        const picture = box.querySelector("img");
+        picture.addEventListener("error", () => {
+          picture.style.display = "none";
+          box.classList.add("missing-image");
+        });
+      });
     }
 
+    function verifyCharacterImage(type) {
+      return new Promise(resolve => {
+        const testImg = new Image();
+        testImg.onload = () => resolve(true);
+        testImg.onerror = () => resolve(false);
+        testImg.src = getCharacterImageUrl(type);
+      });
+    }
 
     function chooseCharacter(type) {
-
-      if (!["mario", "luigi", "toad", "peach"].includes(type)) {
-        return;
-      }
+      if (!CHARACTER_ASSETS[type]) return;
 
       selectedCharacter = type;
 
@@ -3075,6 +3078,13 @@
         return;
       }
 
+      // 圖片不存在時明確指出缺少的檔案，防止再次顯示錯誤角色。
+      if (!(await verifyCharacterImage(selectedCharacter))) {
+        alert("找不到「" + CHARACTER_ASSETS[selectedCharacter] +
+          "」。請先將該PNG圖片上傳到GitHub typingtest主目錄，與index.html放在同一層。");
+        return;
+      }
+
       if (
         !currentStudent ||
         !sessionToken
@@ -3640,7 +3650,7 @@
       showPanel("game-panel");
 
       document.getElementById("player").style.left = "7%";
-      document.getElementById("player").classList.remove("running");
+      document.getElementById("player").classList.remove("running", "fast");
       document.getElementById("game-container").classList.remove("speed-fast");
       document.getElementById("race-progress-fill").style.width = "0%";
       document.getElementById("answer-input").value = "";
@@ -3743,6 +3753,7 @@
       const moving = currentSpeed > 1.4;
 
       player.classList.toggle("running", moving);
+      player.classList.toggle("fast", currentSpeed > 17);
       stage.classList.toggle("speed-fast", currentSpeed > 17);
 
       // 字母輸入頻率越高，人物步頻越快。
