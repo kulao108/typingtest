@@ -1272,7 +1272,15 @@
 
       <br>
 
-      7. 支援全形（Ａ、Ｂ）與半形（A、B）英文字母；打字越快，角色跑得越快。
+      7. 支援全形／半形英文字母及倉頡字根，例如 A、ａ、Ａ、日皆代表 A。
+
+      <br>
+
+      8. 輸入完整答案後，必須按空白鍵提交才會進入下一題；使用中文輸入法選字時的空白鍵不會直接交題。
+
+      <br>
+
+      9. 打字越快，角色跑得越快。
 
     </div>
 
@@ -1471,15 +1479,18 @@
         <input
           id="answer-input"
           type="text"
-          maxlength="8"
+          maxlength="20"
           autocomplete="off"
           autocapitalize="off"
           spellcheck="false"
           aria-label="輸入題目答案"
-          placeholder="A / Ａ"
+          placeholder="輸入英文或倉頡字根"
         >
         <div id="answer-feedback" aria-live="off"></div>
-        <div class="typing-help">可輸入全形／半形英文字母</div>
+        <div class="typing-help" style="font-size:13px;font-weight:900;color:#bd5c00;line-height:1.5">
+          可輸入全形／半形英文或倉頡字根<br>
+          完成輸入後，按【空白鍵】提交
+        </div>
       </div>
 
     </div>
@@ -1681,7 +1692,7 @@
 
 
     const APP_VERSION =
-      "4.3.0";
+      "4.4.0";
 
 
     const TOTAL_QUESTIONS =
@@ -1923,28 +1934,84 @@
     }
 
 
+
     // ==============================================================
-    // 輸入：兼容全形與半形英文字母
+    // 倉頡字根 / 英文字母對照
+    // 支援大小寫、全形／半形英文字母及中文字根，
+    // 並支援多碼混合輸入：例如 AB = 日月 = A月 = 日Ｂ。
     // ==============================================================
-    function normalizeTypedLetter(value) {
-      const normalized = String(value || "").normalize("NFKC").toLowerCase();
-      return /^[a-z]$/.test(normalized) ? normalized : "";
-    }
+    const CANGJIE_ROOT_TO_CODE = Object.freeze({
+      "日": "a", "月": "b", "金": "c", "木": "d", "水": "e",
+      "火": "f", "土": "g", "竹": "h", "戈": "i", "十": "j",
+      "大": "k", "中": "l", "一": "m", "弓": "n", "人": "o",
+      "心": "p", "手": "q", "口": "r", "尸": "s", "廿": "t",
+      "山": "u", "女": "v", "田": "w", "難": "x", "卜": "y",
+      "重": "z"
+    });
 
+    const CANGJIE_CODE_TO_ROOT = Object.freeze(
+      Object.fromEntries(
+        Object.entries(CANGJIE_ROOT_TO_CODE).map(
+          ([root, code]) => [code, root]
+        )
+      )
+    );
 
-    function readAnswerInput() {
-      const input = document.getElementById("answer-input");
-      const raw = input.value;
-      if (!raw) return;
-      input.value = "";
+    // Unicode NFKC 將 Ａ、ａ 等全形字母標準化為半形。
+    // 所有倉頡字根均轉換至相應英文碼才比較。
+    function normalizeAnswerToCode(answer) {
+      const chars = [...String(answer == null ? "" : answer)
+        .normalize("NFKC").trim()];
+      if (chars.length === 0) return "";
 
-      // 一次只計一個字母，防止貼上一整串直接完成測驗。
-      const letter = normalizeTypedLetter(raw);
-      if (letter && isPlaying) {
-        submitLetter(letter);
+      let code = "";
+      for (const char of chars) {
+        const latin = char.toLowerCase();
+        if (/^[a-z]$/.test(latin)) {
+          code += latin;
+        } else if (Object.hasOwn(CANGJIE_ROOT_TO_CODE, char)) {
+          code += CANGJIE_ROOT_TO_CODE[char];
+        } else {
+          // 非英文字母／非倉頡字根不可冒充為正確答案。
+          return null;
+        }
       }
+      return code;
     }
 
+    function formatCorrectAnswer(answer) {
+      const latin = String(answer || "").normalize("NFKC").toLowerCase();
+      const roots = [...latin].map(
+        ch => CANGJIE_CODE_TO_ROOT[ch] || ""
+      ).join("");
+      return latin.toUpperCase() + (roots ? "（" + roots + "）" : "");
+    }
+
+    // 按鍵實際輸入才增加跑步速度；按空白鍵本身不當成答對。
+    function recordTypingActivity(count = 1) {
+      if (!isPlaying) return;
+      const now = performance.now();
+      for (let i = 0; i < Math.min(6, count); i++) {
+        recentKeyTimes.push(now);
+      }
+      lastTypingAt = now;
+      recentKeyTimes = recentKeyTimes.filter(t => now - t < 4400);
+    }
+
+    // 保留輸入框內容，等待學生自行按空白鍵提交。
+    function syncPendingAnswer() {
+      if (!isPlaying || isComposingAnswer) return;
+      const input = document.getElementById("answer-input");
+      const next = input.value;
+      const increase = [...next].length - [...answerBuffer].length;
+      if (increase > 0) recordTypingActivity(increase);
+      answerBuffer = next;
+
+      document.getElementById("answer-feedback").textContent =
+        next.trim()
+          ? "已輸入答案，請按空白鍵提交"
+          : "輸入答案後，按空白鍵提交";
+    }
 
     function setupAnswerInput() {
       const input = document.getElementById("answer-input");
@@ -1955,70 +2022,94 @@
 
       input.addEventListener("compositionend", () => {
         isComposingAnswer = false;
-        // 有些輸入法會於 compositionend 之後才觸發最後的 input。
-        setTimeout(readAnswerInput, 0);
+        // 輸入法選字完成後，中文才算進作答欄。
+        syncPendingAnswer();
       });
+
+      // 禁止直接貼上答案，維持打字練習的公平性。
+      input.addEventListener("paste", event => event.preventDefault());
+      input.addEventListener("drop", event => event.preventDefault());
 
       input.addEventListener("input", event => {
         if (isComposingAnswer || event.isComposing) return;
 
         if (event.inputType === "insertFromPaste" ||
             event.inputType === "insertFromDrop") {
-          input.value = "";
+          input.value = answerBuffer;
           return;
         }
 
-        readAnswerInput();
+        syncPendingAnswer();
       });
 
       window.addEventListener("keydown", event => {
-        if (!isPlaying || event.isComposing ||
+        if (!isPlaying) return;
+        if (event.isComposing || isComposingAnswer ||
+            event.keyCode === 229 ||
             event.ctrlKey || event.metaKey || event.altKey) {
           return;
         }
 
-        if (event.target === input ||
-            (event.target && /^(INPUT|SELECT|TEXTAREA)$/.test(event.target.tagName))) {
+        const spaceKey = event.code === "Space" ||
+          event.key === " " || event.key === "Spacebar" ||
+          event.key === "　";
+
+        // Space 是唯一的提交鍵；不會因字母或中文字根輸入正確而自動跳題。
+        if (spaceKey) {
+          event.preventDefault();
+          if (!event.repeat) submitCurrentAnswer();
           return;
         }
 
-        const letter = normalizeTypedLetter(event.key);
-        if (!letter) return;
-        event.preventDefault();
-        submitLetter(letter);
+        // 遊戲開始後通常已自動聚焦輸入框。若偶然失焦，
+        // 英文字母仍可重新聚焦並輸入。
+        if (event.target === input ||
+            (event.target && /^(INPUT|SELECT|TEXTAREA)$/.test(
+              event.target.tagName || ""
+            ))) {
+          return;
+        }
+
+        const character = String(event.key || "").normalize("NFKC");
+        if (/^[a-z]$/i.test(character) ||
+            Object.hasOwn(CANGJIE_ROOT_TO_CODE, character)) {
+          event.preventDefault();
+          input.focus({preventScroll:true});
+          input.value += event.key;
+          syncPendingAnswer();
+        }
       });
     }
 
+    function submitCurrentAnswer() {
+      if (!isPlaying || isComposingAnswer ||
+          questionsAttempted >= TOTAL_QUESTIONS) return;
 
-    function submitLetter(letter) {
-      if (!isPlaying || questionsAttempted >= TOTAL_QUESTIONS) return;
+      const input = document.getElementById("answer-input");
+      const rawAnswer = input.value.trim();
+
+      if (!rawAnswer) {
+        document.getElementById("answer-feedback").textContent =
+          "請先輸入答案，再按空白鍵提交。";
+        input.focus({preventScroll:true});
+        return;
+      }
 
       const question = questionSequence[questionsAttempted];
       if (!question) return;
 
-      const now = performance.now();
-      recentKeyTimes.push(now);
-      lastTypingAt = now;
-      recentKeyTimes = recentKeyTimes.filter(t => now - t < 4400);
-
-      answerBuffer += letter;
-
-      // 可支援題庫內答案為多個英文字母的圖片。
-      const isPrefix = question.answer.startsWith(answerBuffer);
-      const isComplete = answerBuffer === question.answer;
-
-      if (isPrefix && !isComplete) {
-        document.getElementById("answer-feedback").textContent =
-          "已輸入：" + answerBuffer.toUpperCase();
-        return;
-      }
+      // 只有按空白鍵時才判分與轉下一題。
+      const studentCode = normalizeAnswerToCode(rawAnswer);
+      const expectedCode = normalizeAnswerToCode(question.answer);
+      const correct = studentCode !== null &&
+        studentCode !== "" &&
+        studentCode === expectedCode;
 
       questionsAttempted++;
 
-      if (isComplete) {
+      if (correct) {
         correctAnswers++;
         currentSpeed = Math.min(34, currentSpeed + 2.5);
-        document.getElementById("answer-feedback").textContent = "✅ 正確！";
       } else {
         mistakes++;
         currentSpeed = Math.max(0, currentSpeed * .72);
@@ -2026,20 +2117,24 @@
           attemptNumber: questionsAttempted,
           imgSrc: question.imgSrc,
           categoryLabel: question.categoryLabel,
-          userAnswer: answerBuffer,
-          correctAnswer: question.answer
+          userAnswer: rawAnswer,
+          correctAnswer: formatCorrectAnswer(question.answer)
         });
-        document.getElementById("question-box").style.borderColor = "#ed4d45";
+
+        const box = document.getElementById("question-box");
+        box.style.borderColor = "#ed4d45";
         setTimeout(() => {
-          document.getElementById("question-box").style.borderColor = "#ffcd31";
+          box.style.borderColor = "#ffcd31";
         }, 180);
       }
 
       answerBuffer = "";
+      input.value = "";
       updateHUD();
 
       const progress = questionsAttempted / TOTAL_QUESTIONS;
-      document.getElementById("player").style.left = (7 + progress * 63) + "%";
+      document.getElementById("player").style.left =
+        (7 + progress * 63) + "%";
       document.getElementById("race-progress-fill").style.width =
         Math.round(progress * 100) + "%";
 
@@ -2047,10 +2142,6 @@
         endGame(true);
       } else {
         showNextQuestion();
-      }
-
-      const input = document.getElementById("answer-input");
-      if (document.activeElement !== input && isPlaying) {
         input.focus({preventScroll:true});
       }
     }
@@ -3790,7 +3881,8 @@
       answerBuffer = "";
       const input = document.getElementById("answer-input");
       input.value = "";
-      document.getElementById("answer-feedback").textContent = "";
+      document.getElementById("answer-feedback").textContent =
+        "輸入答案後，按空白鍵提交";
 
       // 題目圖片在固定卡片顯示，不參與任何跑步或背景動畫。
       document.getElementById("current-image").innerHTML =
