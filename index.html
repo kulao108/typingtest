@@ -563,8 +563,8 @@
       z-index: 11;
       left: 7%;
       bottom: 77px;
-      width: 105px;
-      height: 125px;
+      width: 145px;
+      height: 195px;
       pointer-events: none;
       transition: left .19s ease-out;
     }
@@ -580,25 +580,26 @@
       height: 100%;
       width: 100%;
       object-fit: contain;
-      object-position: center bottom;
       filter: drop-shadow(0 6px 0 #143d4e54);
-      transform-origin: 50% 92%;
-      /* 原圖是正面照；用透視與傾斜模擬側跑，保留原圖人物 */
-      transform: perspective(480px) rotateY(-32deg) rotateZ(-4deg);
+    }
+
+    /* 以12格跑步素材逐格播放前後腳動作。 */
+    #runner-canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      filter: drop-shadow(0 5px 1px rgba(11,44,70,.30));
     }
 
     #player.running .player-sprite {
       animation: spriteSprint var(--run-duration, .45s) ease-in-out infinite alternate;
     }
 
-    #player.running .player-sprite img {
-      animation: runnerLean var(--run-duration, .45s) ease-in-out infinite alternate;
-    }
-
-    #player.running.fast .player-sprite img {
+    #player.running.fast #runner-canvas {
       filter:
-        drop-shadow(0 6px 0 #143d4e54)
-        drop-shadow(-9px 4px 0 rgba(255,255,255,.32));
+        drop-shadow(0 5px 1px rgba(11,44,70,.30))
+        drop-shadow(-8px 4px 0 rgba(255,255,255,.28));
     }
 
     .runner-shadow {
@@ -963,8 +964,8 @@
       }
 
       #player {
-        width: 84px;
-        height: 103px;
+        width: 112px;
+        height: 149px;
         bottom: 77px;
       }
 
@@ -1456,7 +1457,10 @@
       <div id="race-badge">🍄 蘑菇王國賽跑</div>
 
       <div id="player" aria-label="學生選擇的賽跑角色">
-        <div id="player-sprite" class="player-sprite"></div>
+        <div id="player-sprite" class="player-sprite">
+          <canvas id="runner-canvas" width="240" height="320"
+            aria-label="前後腳交替的跑步角色"></canvas>
+        </div>
         <div class="runner-shadow"></div>
       </div>
 
@@ -1677,7 +1681,7 @@
 
 
     const APP_VERSION =
-      "4.1.0";
+      "4.3.0";
 
 
     const TOTAL_QUESTIONS =
@@ -1706,6 +1710,20 @@
 
     let selectedCharacter =
       null;
+
+    const RUNNING_ASSETS = Object.freeze({
+      mario: "瑪利歐_run.webp",
+      luigi: "路易吉_run.webp",
+      toad: "奇諾比奧_run.webp",
+      peach: "碧琪_run.webp"
+    });
+
+    const RUN_FRAME_COUNT = 12;
+    const RUN_FRAME_WIDTH = 240;
+    const RUN_FRAME_HEIGHT = 320;
+    let runAtlas = null;
+    let runningTime = 0;
+    let previousRunFrame = -1;
 
     let answerBuffer =
       "";
@@ -1896,8 +1914,8 @@
         card.setAttribute("aria-pressed", selected ? "true" : "false");
       });
 
-      document.getElementById("player-sprite").innerHTML =
-        characterSprite(type);
+      // 選角圖繼續使用原PNG；跑步畫面則由12格Canvas呈現。
+      runAtlas = null;
 
       const start = document.getElementById("start-button");
       start.disabled = false;
@@ -3071,6 +3089,52 @@
     }
 
 
+    // ==============================================================
+    // 12影格側跑動畫，畫面依實際打字速度切換
+    // ==============================================================
+    function getRunAssetUrl(type) {
+      const filename = RUNNING_ASSETS[type];
+      if (!filename) return "";
+      return "./" + encodeURIComponent(filename) + "?v=4.3";
+    }
+
+    async function loadRunningAnimation(type) {
+      const image = await new Promise((resolve,reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error(
+          "找不到「" + RUNNING_ASSETS[type] +
+          "」。請解壓動畫ZIP，把4個WebP檔上傳至GitHub typingtest（與index.html同層）。"
+        ));
+        img.src = getRunAssetUrl(type);
+      });
+
+      if (image.naturalWidth !== RUN_FRAME_WIDTH * RUN_FRAME_COUNT ||
+          image.naturalHeight !== RUN_FRAME_HEIGHT) {
+        throw new Error("動畫素材尺寸不符合：" + RUNNING_ASSETS[type]);
+      }
+
+      runAtlas = image;
+      runningTime = 0;
+      previousRunFrame = -1;
+      drawRunningFrame(0);
+    }
+
+    function drawRunningFrame(frameNumber) {
+      if (!runAtlas || frameNumber === previousRunFrame) return;
+      const canvas = document.getElementById("runner-canvas");
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      ctx.clearRect(0,0,RUN_FRAME_WIDTH,RUN_FRAME_HEIGHT);
+      ctx.drawImage(
+        runAtlas,
+        frameNumber * RUN_FRAME_WIDTH,0,RUN_FRAME_WIDTH,RUN_FRAME_HEIGHT,
+        0,0,RUN_FRAME_WIDTH,RUN_FRAME_HEIGHT
+      );
+      previousRunFrame = frameNumber;
+    }
+
     async function prepareGame() {
 
       if (!selectedCharacter) {
@@ -3098,6 +3162,14 @@
         return;
       }
 
+
+      // 先確認目前角色有真正的前後腳交替動畫圖集。
+      try {
+        await loadRunningAnimation(selectedCharacter);
+      } catch (err) {
+        alert(err.message);
+        return;
+      }
 
       const selectedInputs =
 
@@ -3646,12 +3718,17 @@
       lastFrameTime = 0;
       answerBuffer = "";
       bgOffset = 0;
+      runningTime = 0;
+      previousRunFrame = -1;
+      drawRunningFrame(0);
 
       showPanel("game-panel");
 
       document.getElementById("player").style.left = "7%";
       document.getElementById("player").classList.remove("running", "fast");
       document.getElementById("game-container").classList.remove("speed-fast");
+      runningTime = 0;
+      drawRunningFrame(0);
       document.getElementById("race-progress-fill").style.width = "0%";
       document.getElementById("answer-input").value = "";
       document.getElementById("question-box").style.borderColor = "#ffcd31";
@@ -3755,6 +3832,19 @@
       player.classList.toggle("running", moving);
       player.classList.toggle("fast", currentSpeed > 17);
       stage.classList.toggle("speed-fast", currentSpeed > 17);
+
+      // 打字愈快，12格跑步影格播放愈快，左右腳循環交替。
+      const framesPerSecond = moving
+        ? (4 + Math.min(34,currentSpeed) / 34 * 20)
+        : 0;
+
+      if (moving) {
+        runningTime += delta * framesPerSecond;
+        drawRunningFrame(Math.floor(runningTime) % RUN_FRAME_COUNT);
+      } else {
+        runningTime = 0;
+        drawRunningFrame(0);
+      }
 
       // 字母輸入頻率越高，人物步頻越快。
       player.style.setProperty(
