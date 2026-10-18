@@ -1692,7 +1692,7 @@
 
 
     const APP_VERSION =
-      "4.4.0";
+      "4.5.0";
 
 
     const TOTAL_QUESTIONS =
@@ -3490,186 +3490,95 @@
     }
 
 
-    function avoidBoundaryRepeat(
-      sequence,
-      round
-    ) {
-
-      if (
-        sequence.length ===
-        0
-        ||
-        round.length <=
-        1
-      ) {
-
-        return round;
+    // 比較兩輪是否出現完全相同的題目順序。
+    function isSameQuestionOrder(first, second) {
+      if (!first || !second || first.length !== second.length) {
+        return false;
       }
-
-
-      const previousId =
-
-        sequence[
-          sequence.length - 1
-        ].id;
-
-
-      if (
-        round[0].id !==
-        previousId
-      ) {
-
-        return round;
-      }
-
-
-      const swapIndex =
-
-        round.findIndex(
-
-          (item, index) =>
-
-            index >
-              0
-
-            &&
-
-            item.id !==
-              previousId
-
-        );
-
-
-      if (
-        swapIndex >
-        0
-      ) {
-
-        [
-          round[0],
-          round[swapIndex]
-        ] = [
-          round[swapIndex],
-          round[0]
-        ];
-
-      }
-
-
-      return round;
-
+      return first.every((question, index) =>
+        question.id === second[index].id
+      );
     }
 
 
-    function buildFairQuestionSequence(
-      bank,
-      totalQuestions
-    ) {
-
-      const sequence =
-        [];
-
-
-      const uniqueCount =
-        bank.length;
-
-
-      if (
-        uniqueCount ===
-        0
-      ) {
-
-        return sequence;
+    // ==============================================================
+    // 公平 + 每輪獨立亂序
+    // 例：35個字、100題 -> 35（亂序A）+35（亂序B）+30（亂序C）
+    // 每輪都用 Fisher-Yates 重新洗牌，同輪同字不重複。
+    // 兩個完整輪次（題數 >= 3）不會出現完全相同的順序，
+    // 並在可行時避免上一輪最後一題 = 新一輪第一題。
+    // ==============================================================
+    function buildFairQuestionSequence(bank, totalQuestions) {
+      if (!Array.isArray(bank) || bank.length === 0 ||
+          !Number.isFinite(totalQuestions) || totalQuestions <= 0) {
+        return [];
       }
 
+      // 按檔案ID去重：避免同一張題圖在同一輪內重複。
+      const uniqueBank = Array.from(
+        new Map(bank.map((question, index) => [
+          question.id === undefined ? "no-id:" + index : question.id,
+          question
+        ])).values()
+      );
 
-      const fullRounds =
+      const sequence = [];
+      const targetCount = Math.floor(totalQuestions);
+      let previousRound = null;
 
-        Math.floor(
+      while (sequence.length < targetCount) {
+        const remaining = targetCount - sequence.length;
+        const thisRoundCount = Math.min(uniqueBank.length, remaining);
+        const lastId = sequence.length
+          ? sequence[sequence.length - 1].id
+          : null;
 
-          totalQuestions /
-          uniqueCount
+        // 每一輪重新、獨立洗牌；不是沿用第一輪順序。
+        let round = shuffleArray(uniqueBank);
 
-        );
+        // 重新洗牌直到滿足：
+        // 1) 可避免時，不在兩輪交界連續出同一張圖片；
+        // 2) 當題庫至少3題時，新一輪不跟上一輪完全同序。
+        // 只有1~2題時，兩個條件不一定能同時滿足，
+        // 優先避免交界連續同題。
+        for (let attempt = 0; attempt < 60; attempt++) {
+          const repeatedAtBoundary =
+            uniqueBank.length > 1 &&
+            lastId !== null &&
+            round[0].id === lastId;
+          const repeatedWholeRound =
+            uniqueBank.length >= 3 &&
+            isSameQuestionOrder(round, previousRound);
 
+          if (!repeatedAtBoundary && !repeatedWholeRound) {
+            break;
+          }
+          round = shuffleArray(uniqueBank);
+        }
 
-      const remainder =
-
-        totalQuestions %
-        uniqueCount;
-
-
-      // 每一個完整輪次：
-      // 所有字各出現一次，同輪不重複。
-      for (
-        let roundNo =
-          0;
-
-        roundNo <
-          fullRounds;
-
-        roundNo++
-      ) {
-
-        let round =
-
-          shuffleArray(
-            bank
+        // 極少數洗牌仍未滿足條件時，作最小修正。
+        if (uniqueBank.length > 1 &&
+            lastId !== null && round[0].id === lastId) {
+          const swapIndex = round.findIndex((q, i) =>
+            i > 0 && q.id !== lastId
           );
+          if (swapIndex > 0) {
+            [round[0], round[swapIndex]] =
+              [round[swapIndex], round[0]];
+          }
+        }
 
+        if (uniqueBank.length >= 3 &&
+            isSameQuestionOrder(round, previousRound)) {
+          [round[1], round[2]] = [round[2], round[1]];
+        }
 
-        round =
-
-          avoidBoundaryRepeat(
-            sequence,
-            round
-          );
-
-
-        sequence.push(
-          ...round
-        );
-
+        // 最後不足一輪只取所需題數，不會重複抽單字。
+        sequence.push(...round.slice(0, thisRoundCount));
+        previousRound = round;
       }
-
-
-      // 最後不足一輪：
-      // 從整個題庫隨機抽取所需數量，
-      // 同一個字在這個餘數輪不會重複。
-      if (
-        remainder >
-        0
-      ) {
-
-        let finalRound =
-
-          shuffleArray(
-            bank
-          );
-
-
-        finalRound =
-
-          avoidBoundaryRepeat(
-            sequence,
-            finalRound
-          );
-
-
-        sequence.push(
-
-          ...finalRound.slice(
-            0,
-            remainder
-          )
-
-        );
-
-      }
-
 
       return sequence;
-
     }
 
 
