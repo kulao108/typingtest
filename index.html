@@ -992,12 +992,65 @@
 
     }
 
+    /* 速度提醒：必須按「確定」才可關閉，無遮罩外點擊退出。 */
+    #speed-warning-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 99999;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      padding: 24px;
+      background: rgba(13,23,53,.84);
+    }
+    #speed-warning-overlay.active { display: flex; }
+    .speed-warning-dialog {
+      background: #fff;
+      border: 5px solid #ffb400;
+      border-radius: 18px;
+      box-shadow: 0 20px 70px #0007;
+      max-width: 470px;
+      width: 100%;
+      padding: 26px 22px;
+      text-align: center;
+    }
+    .speed-warning-dialog h2 { margin: 0 0 14px; color: #b45404; }
+    .speed-warning-dialog p { font-size: 17px; line-height: 1.7; }
+    #speed-warning-confirm {
+      margin-top: 13px;
+      width: 75%;
+      max-width: 230px;
+      padding: 12px;
+      border: 0;
+      border-radius: 11px;
+      background: #ffbb20;
+      color: #302114;
+      font-size: 19px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
   </style>
 
 </head>
 
 
 <body>
+
+  <div id="speed-warning-overlay" role="dialog" aria-modal="true"
+    aria-labelledby="speed-warning-heading" aria-describedby="speed-warning-text">
+    <div class="speed-warning-dialog">
+      <h2 id="speed-warning-heading">⚠️ 打字速度異常提醒</h2>
+      <p id="speed-warning-text">
+        你的輸入速度已超過每分鐘120字。是否故意使用外掛程式？
+      </p>
+      <p style="font-size:13px;color:#68748b">
+        這只是速度提醒，不能單憑速度判斷是否使用外掛。
+        測驗計時已暫停，請按「確定」繼續。
+      </p>
+      <button id="speed-warning-confirm" type="button" onclick="confirmSpeedWarning()">確定</button>
+    </div>
+  </div>
 
   <!-- Apps Script POST 回應 -->
   <iframe
@@ -1248,7 +1301,7 @@
 
       <br>
 
-      1. 共 <b>100</b> 題，每答對一題得 1 分，滿分 100 分。
+      1. 所選題庫最多100個不同圖片時考100題；超過100個時考200題。最終成績均換算成滿分100分。
 
       <br>
 
@@ -1268,7 +1321,7 @@
 
       <br>
 
-      6. 100題會按所選題庫公平輪替：每個字先完整出現一輪，才開始下一輪；最後不足一輪的題數才隨機抽取，且同一輪不重複。
+      6. 題目按所選題庫公平輪替，每一輪都重新隨機排列，同輪不重複；最後不足一輪才隨機抽取。
 
       <br>
 
@@ -1280,7 +1333,7 @@
 
       <br>
 
-      9. 打字越快，角色跑得越快。
+      9. 打字越快，角色跑得越快。若輸入速度超過每分鐘120字，將暫停並彈出速度提醒，須按「確定」繼續測驗。
 
     </div>
 
@@ -1692,11 +1745,12 @@
 
 
     const APP_VERSION =
-      "4.5.0";
+      "4.6.0";
 
 
-    const TOTAL_QUESTIONS =
-      100;
+    const DEFAULT_TOTAL_QUESTIONS = 100;
+    const EXTENDED_TOTAL_QUESTIONS = 200;
+    const MAX_ALLOWED_CPM = 120;
 
 
     const GAS_FRAME_NAME =
@@ -1711,9 +1765,20 @@
       [];
 
 
-    // 預先排好的100題公平出題序列
+    // 根據所選題庫不同圖片數量，生成公平隨機的100題或200題。
     let questionSequence =
       [];
+
+    let currentTargetQuestions = DEFAULT_TOTAL_QUESTIONS;
+    let selectedQuestionCount = 0;
+
+    // 輸入速度監測（已輸入字元，不包括空白鍵或退格）。
+    let auditFirstTypingAt = null;
+    let auditKeyTimes = [];
+    let auditLastWarningAt = -Infinity;
+    let isSpeedDialogOpen = false;
+    let speedWarningCount = 0;
+    let speedWarningArmed = true;
 
 
     let currentStudent =
@@ -1987,20 +2052,69 @@
       return latin.toUpperCase() + (roots ? "（" + roots + "）" : "");
     }
 
-    // 按鍵實際輸入才增加跑步速度；按空白鍵本身不當成答對。
+    // 以最近60秒輸入的「實際字符數」計算字/分鐘。
+    // 為防止一秒內短暫爆發被誤判，至少觀察15秒才提醒。
+    // 忽略空白鍵、退格及選字前的輸入法組字階段。
+    function calculateAuditedCPM(now) {
+      if (auditFirstTypingAt === null) return 0;
+      auditKeyTimes = auditKeyTimes.filter(t => now - t <= 60000);
+      const observedSeconds = Math.min(60, (now - auditFirstTypingAt) / 1000);
+      if (observedSeconds < 15 || observedSeconds <= 0) return 0;
+      return auditKeyTimes.length * 60 / observedSeconds;
+    }
+
+    function openSpeedWarning(cpm) {
+      if (isSpeedDialogOpen || !isPlaying) return;
+      isSpeedDialogOpen = true;
+      speedWarningCount++;
+      auditLastWarningAt = performance.now();
+      speedWarningArmed = false;
+
+      document.getElementById("speed-warning-text").textContent =
+        "偵測到打字速度約 " + Math.round(cpm) +
+        " 字／分鐘，超過上限120字／分鐘。是否故意使用外掛程式？";
+      document.getElementById("speed-warning-overlay").classList.add("active");
+      document.getElementById("answer-input").blur();
+      document.getElementById("speed-warning-confirm").focus();
+    }
+
+    function confirmSpeedWarning() {
+      if (!isSpeedDialogOpen) return;
+      document.getElementById("speed-warning-overlay").classList.remove("active");
+      isSpeedDialogOpen = false;
+      lastFrameTime = 0;
+      if (isPlaying) {
+        document.getElementById("answer-input").focus({preventScroll:true});
+      }
+    }
+
     function recordTypingActivity(count = 1) {
-      if (!isPlaying) return;
+      if (!isPlaying || isSpeedDialogOpen) return;
       const now = performance.now();
-      for (let i = 0; i < Math.min(6, count); i++) {
+      const amount = Math.max(0, Math.min(6, count));
+      if (!amount) return;
+
+      if (auditFirstTypingAt === null) auditFirstTypingAt = now;
+      for (let i = 0; i < amount; i++) {
         recentKeyTimes.push(now);
+        auditKeyTimes.push(now);
       }
       lastTypingAt = now;
       recentKeyTimes = recentKeyTimes.filter(t => now - t < 4400);
+      const cpm = calculateAuditedCPM(now);
+
+      // 防止連續彈窗；速度先降到110以下才重新設防，
+      // 而兩次提醒之間亦至少相隔30秒。
+      if (cpm <= 110) speedWarningArmed = true;
+      if (cpm > MAX_ALLOWED_CPM && speedWarningArmed &&
+          now - auditLastWarningAt >= 30000) {
+        openSpeedWarning(cpm);
+      }
     }
 
     // 保留輸入框內容，等待學生自行按空白鍵提交。
     function syncPendingAnswer() {
-      if (!isPlaying || isComposingAnswer) return;
+      if (!isPlaying || isComposingAnswer || isSpeedDialogOpen) return;
       const input = document.getElementById("answer-input");
       const next = input.value;
       const increase = [...next].length - [...answerBuffer].length;
@@ -2043,7 +2157,7 @@
       });
 
       window.addEventListener("keydown", event => {
-        if (!isPlaying) return;
+        if (!isPlaying || isSpeedDialogOpen) return;
         if (event.isComposing || isComposingAnswer ||
             event.keyCode === 229 ||
             event.ctrlKey || event.metaKey || event.altKey) {
@@ -2082,8 +2196,8 @@
     }
 
     function submitCurrentAnswer() {
-      if (!isPlaying || isComposingAnswer ||
-          questionsAttempted >= TOTAL_QUESTIONS) return;
+      if (!isPlaying || isComposingAnswer || isSpeedDialogOpen ||
+          questionsAttempted >= currentTargetQuestions) return;
 
       const input = document.getElementById("answer-input");
       const rawAnswer = input.value.trim();
@@ -2132,13 +2246,13 @@
       input.value = "";
       updateHUD();
 
-      const progress = questionsAttempted / TOTAL_QUESTIONS;
+      const progress = questionsAttempted / currentTargetQuestions;
       document.getElementById("player").style.left =
         (7 + progress * 63) + "%";
       document.getElementById("race-progress-fill").style.width =
         Math.round(progress * 100) + "%";
 
-      if (questionsAttempted >= TOTAL_QUESTIONS) {
+      if (questionsAttempted >= currentTargetQuestions) {
         endGame(true);
       } else {
         showNextQuestion();
@@ -3342,7 +3456,7 @@
         "loading-detail"
       ).textContent =
 
-        "正在建立公平的100題出題次序…";
+        "正在建立公平、每輪重新洗牌的出題次序…";
 
 
       questionBank =
@@ -3389,24 +3503,30 @@
         }
 
 
+        // 選中題庫中每個不同檔案算一題。>100 時改為200題。
+        selectedQuestionCount = new Set(questionBank.map(q => q.id)).size;
+        currentTargetQuestions = selectedQuestionCount > 100
+          ? EXTENDED_TOTAL_QUESTIONS
+          : DEFAULT_TOTAL_QUESTIONS;
+
         questionSequence =
 
           buildFairQuestionSequence(
 
             questionBank,
 
-            TOTAL_QUESTIONS
+            currentTargetQuestions
 
           );
 
 
         if (
           questionSequence.length !==
-          TOTAL_QUESTIONS
+          currentTargetQuestions
         ) {
 
           throw new Error(
-            "未能建立完整的100題練習"
+            "未能建立完整的" + currentTargetQuestions + "題練習"
           );
 
         }
@@ -3713,6 +3833,13 @@
       isPlaying =
         true;
 
+      auditFirstTypingAt = null;
+      auditKeyTimes = [];
+      auditLastWarningAt = -Infinity;
+      isSpeedDialogOpen = false;
+      speedWarningCount = 0;
+      speedWarningArmed = true;
+      document.getElementById("speed-warning-overlay").classList.remove("active");
       recentKeyTimes = [];
       lastTypingAt = 0;
       lastFrameTime = 0;
@@ -3755,6 +3882,8 @@
         setInterval(
 
           () => {
+            // 速度警示視窗顯示時，凍結倒數，避免學生被扣時間。
+            if (isSpeedDialogOpen) return;
 
             timeLeft--;
 
@@ -3802,6 +3931,11 @@
     function gameLoop(timestamp) {
 
       if (!isPlaying) return;
+      if (isSpeedDialogOpen) {
+        lastFrameTime = timestamp;
+        requestAnimationFrame(gameLoop);
+        return;
+      }
 
       const delta = lastFrameTime
         ? Math.min(.06, (timestamp - lastFrameTime) / 1000)
@@ -3878,6 +4012,16 @@
     }
 
 
+    // 100題：答對1題 = 1分；200題：答對2題 = 1分。
+    // 時間到而未答完，未完成的題目同樣計入分母。
+    function getHundredPointScore() {
+      return Math.round(
+        Math.min(100, Math.max(0,
+          correctAnswers / currentTargetQuestions * 100
+        ))
+      );
+    }
+
     function updateHUD() {
 
       document.getElementById(
@@ -3893,14 +4037,14 @@
         "distance-display"
       ).textContent =
 
-        `${questionsAttempted} / ${TOTAL_QUESTIONS}`;
+        `${questionsAttempted} / ${currentTargetQuestions}`;
 
 
       document.getElementById(
         "score-display"
       ).textContent =
 
-        correctAnswers;
+        getHundredPointScore();
 
     }
 
@@ -4046,7 +4190,7 @@
 
         isFinishedAll
 
-          ? "✅ 完成100題"
+          ? "✅ 完成" + currentTargetQuestions + "題"
 
           : "⏳ 時間到";
 
@@ -4127,14 +4271,16 @@
 
       // =============================
       // ★ 最終成績
-      // 每答對一題 = 1分
+      // 根據測驗總題數換算為100分制（100題或200題）
       // =============================
+
+      const finalScore = getHundredPointScore();
 
       document.getElementById(
         "result-score"
       ).textContent =
 
-        correctAnswers;
+        finalScore;
 
 
       document.getElementById(
@@ -4245,6 +4391,15 @@
 
                 attempted:
                   questionsAttempted,
+
+                totalQuestions:
+                  currentTargetQuestions,
+
+                score:
+                  finalScore,
+
+                speedWarningCount:
+                  speedWarningCount,
 
 
                 timeLimitSeconds:
